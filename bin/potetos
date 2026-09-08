@@ -1,0 +1,543 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import shutil
+import sys
+from pathlib import Path
+from types import SimpleNamespace
+
+REPO = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO))
+from runtime.runner import load_config, run_panel, run_worker
+
+REGISTRY = json.loads((REPO / "adapters" / "registry.json").read_text(encoding="utf-8"))
+BEGIN = "<!-- potetos-for-everyone:begin -->"
+END = "<!-- potetos-for-everyone:end -->"
+GITIGNORE_BEGIN = "# potetos-for-everyone:begin"
+GITIGNORE_END = "# potetos-for-everyone:end"
+MANIFEST = ".potetos/install.json"
+
+BLOCK = f"""{BEGIN}
+## potetos-for-everyone
+
+For non-trivial engineering work, use the Agent Skill at `.agents/skills/poteto-mode/SKILL.md`.
+It routes the task to a playbook, loads supporting skills progressively, prefers simple changes,
+and requires evidence against the real artifact. Canonical skills are adapted from Lauren Tan's pstack.
+If native skill discovery is unavailable, read that SKILL.md and its selected playbook manually.
+{END}"""
+
+GITIGNORE_BLOCK = f"""{GITIGNORE_BEGIN}
+.potetos/
+{GITIGNORE_END}"""
+
+
+def die(msg: str, code: int = 2):
+    print(f"potetos: {msg}", file=sys.stderr)
+    raise SystemExit(code)
+
+
+def merge_block(path: Path):
+    old = path.read_text(encoding="utf-8") if path.exists() else ""
+    if BEGIN in old and END in old:
+        pre, rest = old.split(BEGIN, 1)
+        _, post = rest.split(END, 1)
+        new = pre.rstrip() + ("\n\n" if pre.strip() else "") + BLOCK + post
+    else:
+        new = old.rstrip() + ("\n\n" if old.strip() else "") + BLOCK + "\n"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(new, encoding="utf-8")
+
+
+def remove_block(path: Path):
+    if not path.exists():
+        return
+    text = path.read_text(encoding="utf-8")
+    if BEGIN not in text or END not in text:
+        return
+    pre, rest = text.split(BEGIN, 1)
+    _, post = rest.split(END, 1)
+    text = (pre.rstrip() + ("\n\n" if pre.strip() and post.strip() else "") + post.lstrip()).rstrip() + "\n"
+    if text.strip():
+        path.write_text(text, encoding="utf-8")
+    else:
+        path.unlink()
+
+
+def merge_gitignore(path: Path):
+    old = path.read_text(encoding="utf-8") if path.exists() else ""
+    if GITIGNORE_BEGIN in old and GITIGNORE_END in old:
+        pre, rest = old.split(GITIGNORE_BEGIN, 1)
+        _, post = rest.split(GITIGNORE_END, 1)
+        new = pre.rstrip() + ("\n\n" if pre.strip() else "") + GITIGNORE_BLOCK + post
+    else:
+        new = old.rstrip() + ("\n\n" if old.strip() else "") + GITIGNORE_BLOCK + "\n"
+    path.write_text(new, encoding="utf-8")
+
+
+def remove_gitignore(path: Path):
+    if not path.exists():
+        return
+    text = path.read_text(encoding="utf-8")
+    if GITIGNORE_BEGIN not in text or GITIGNORE_END not in text:
+        return
+    pre, rest = text.split(GITIGNORE_BEGIN, 1)
+    _, post = rest.split(GITIGNORE_END, 1)
+    text = (pre.rstrip() + ("\n\n" if pre.strip() and post.strip() else "") + post.lstrip()).rstrip() + "\n"
+    if text.strip():
+        path.write_text(text, encoding="utf-8")
+    else:
+        path.unlink()
+
+
+def _prune_empty_parents(path: Path, stop: Path):
+    stop = stop.resolve()
+    current = path
+    while current != stop and stop in current.resolve().parents:
+        try:
+            current.rmdir()
+        except OSError:
+            break
+        current = current.parent
+
+
+_TEXT_HASH_SUFFIXES = {".md", ".mdc", ".txt", ".json", ".yml", ".yaml", ".js", ".mjs", ".py", ".sh", ".ps1"}
+
+
+def _hash_bytes(path: Path) -> bytes:
+    data = path.read_bytes()
+    if path.suffix.lower() in _TEXT_HASH_SUFFIXES:
+        data = data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return data
+
+
+def _hash_path(path: Path) -> str:
+    h = hashlib.sha512()
+    root = path.resolve() if path.is_symlink() else path
+    if root.is_file():
+        h.update(_hash_bytes(root))
+        return h.hexdigest()
+    for item in sorted(p for p in root.rglob("*") if p.is_file()):
+        h.update(item.relative_to(root).as_posix().encode("utf-8"))
+        h.update(b"\0")
+        h.update(_hash_bytes(item))
+        h.update(b"\0")
+    return h.hexdigest()
+
+
+def _selected_agents(name: str) -> list[str]:
+    if name == "all":
+        # universal/generic only add AGENTS.md, so keep one of them and every
+        # specialized host shim. This avoids redundant manifest entries.
+        return ["universal"] + [n for n in REGISTRY if n not in {"generic", "universal"}]
+    if name not in REGISTRY:
+        die(f"unknown agent {name!r}; choose one of: all, {', '.join(sorted(REGISTRY))}")
+    return [name]
+
+
+def _skill_destination(target: Path, agents: list[str]) -> Path:
+    skill_dirs = {REGISTRY[name]["skill_dir"] for name in agents}
+    if len(skill_dirs) != 1:
+        die("adapter registry uses multiple skill directories; one canonical install is required")
+    return target / next(iter(skill_dirs))
+
+
+def _instruction_files(agents: list[str]) -> list[str]:
+    return list(dict.fromkeys(["AGENTS.md"] + [REGISTRY[name]["instruction_file"] for name in agents]))
+
+
+def _install_impl(*, target: Path, agent_selection: str, mode: str, force: bool, manage_gitignore: bool):
+    if not target.exists():
+        die(f"target does not exist: {target}")
+    agents = _selected_agents(agent_selection)
+    skills_dst = _skill_destination(target, agents)
+    skills_dst.mkdir(parents=True, exist_ok=True)
+    if mode == "link":
+        probe = skills_dst / ".potetos-link-probe"
+        try:
+            probe.symlink_to(REPO / "skills", target_is_directory=True)
+            probe.unlink()
+        except OSError:
+            probe.unlink(missing_ok=True)
+            print("potetos: symlinks unavailable; falling back to copies", file=sys.stderr)
+            mode = "copy"
+    installed: list[str] = []
+    sources = [src for src in sorted((REPO / "skills").iterdir()) if src.is_dir() and (src / "SKILL.md").exists()]
+
+    identical_existing: set[Path] = set()
+    if not force:
+        collisions = []
+        for src in sources:
+            dst = skills_dst / src.name
+            if not (dst.exists() or dst.is_symlink()):
+                continue
+            if dst.is_symlink() and dst.resolve() == src.resolve() and mode == "link":
+                identical_existing.add(dst)
+                continue
+            if mode == "copy" and dst.is_dir() and not dst.is_symlink() and _hash_path(dst) == _hash_path(src):
+                identical_existing.add(dst)
+                continue
+            collisions.append(dst)
+        if collisions:
+            sample = ", ".join(str(p) for p in collisions[:5])
+            more = f" (+{len(collisions) - 5} more)" if len(collisions) > 5 else ""
+            die(f"skill destinations already exist with different content: {sample}{more}; use --force to replace them")
+
+    for src in sources:
+        dst = skills_dst / src.name
+        if dst in identical_existing:
+            installed.append(str(dst.relative_to(target)))
+            continue
+        if dst.exists() or dst.is_symlink():
+            if dst.is_symlink() or dst.is_file():
+                dst.unlink()
+            else:
+                shutil.rmtree(dst)
+        if mode == "link":
+            dst.symlink_to(src, target_is_directory=True)
+        else:
+            shutil.copytree(src, dst)
+        installed.append(str(dst.relative_to(target)))
+
+    instruction_files = _instruction_files(agents)
+    for rel in instruction_files:
+        merge_block(target / rel)
+
+    if manage_gitignore:
+        merge_gitignore(target / ".gitignore")
+
+    checksums = {rel: _hash_path(target / rel) for rel in installed} if mode == "copy" else {}
+    tree_checksum = _hash_path(skills_dst) if mode == "copy" else None  # legacy manifest compatibility
+    meta = {
+        "source": str(REPO),
+        "agent_selection": agent_selection,
+        "agents": agents,
+        "mode": mode,
+        "skill_dir": str(skills_dst.relative_to(target)),
+        "instruction_files": instruction_files,
+        "gitignore_managed": manage_gitignore,
+        "installed": installed,
+        "checksums": checksums,
+        "tree_checksum": tree_checksum,
+    }
+    mp = target / MANIFEST
+    mp.parent.mkdir(parents=True, exist_ok=True)
+    mp.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
+
+    print(f"installed {len(installed)} skills in {target}")
+    print(f"compatibility: {agent_selection} ({', '.join(agents)})")
+    print(f"mode: {mode}")
+    print("instructions: " + ", ".join(instruction_files))
+    print(f"skills: {skills_dst.relative_to(target)}")
+    print("ready: ask your agent to use poteto-mode")
+
+
+def install(args):
+    target = Path(args.target).resolve()
+    mode = "link" if args.link else "copy"
+    _install_impl(
+        target=target,
+        agent_selection=args.agent,
+        mode=mode,
+        force=args.force,
+        manage_gitignore=not args.no_gitignore,
+    )
+
+
+def _load_manifest(target: Path) -> tuple[Path, dict]:
+    mp = target / MANIFEST
+    if not mp.exists():
+        die(f"no install manifest at {mp}")
+    try:
+        return mp, json.loads(mp.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        die(f"cannot read install manifest: {exc}")
+
+
+def _modified_managed_paths(target: Path, meta: dict) -> list[str]:
+    installed = meta.get("installed", [])
+    mode = meta.get("mode", "copy")
+    if mode == "link":
+        source_root = Path(meta.get("source", REPO)) / "skills"
+        modified = []
+        for rel in installed:
+            path = target / rel
+            if not path.is_symlink():
+                modified.append(rel + (" (missing)" if not path.exists() else " (not a symlink)"))
+                continue
+            expected = os.path.normpath(str(source_root / Path(rel).name))
+            actual_target = os.readlink(path)
+            actual = os.path.normpath(
+                actual_target if os.path.isabs(actual_target) else str(path.parent / actual_target)
+            )
+            if actual != expected:
+                modified.append(rel + " (link target changed)")
+        return modified
+
+    skill_dir = target / meta.get("skill_dir", ".agents/skills")
+    if not skill_dir.exists():
+        return [str(skill_dir.relative_to(target)) + " (missing)"]
+
+    checksums = meta.get("checksums", {})
+    if checksums:
+        modified = []
+        for rel in installed:
+            path = target / rel
+            expected = checksums.get(rel)
+            if not path.exists() and not path.is_symlink():
+                modified.append(rel + " (missing)")
+            elif expected and _hash_path(path) != expected:
+                modified.append(rel)
+        return modified
+
+    # Backward compatibility for manifests that only tracked the whole skill tree.
+    expected_tree = meta.get("tree_checksum")
+    if expected_tree:
+        return [] if _hash_path(skill_dir) == expected_tree else [meta.get("skill_dir", ".agents/skills") + " (content changed)"]
+
+    modified = []
+    for rel in installed:
+        path = target / rel
+        if not path.exists() and not path.is_symlink():
+            modified.append(rel + " (missing)")
+    return modified
+
+
+def update(args):
+    target = Path(args.target).resolve()
+    _, meta = _load_manifest(target)
+    modified = _modified_managed_paths(target, meta)
+    if modified and not args.force:
+        sample = ", ".join(modified[:5])
+        more = f" (+{len(modified) - 5} more)" if len(modified) > 5 else ""
+        die(f"managed skills were edited or removed: {sample}{more}; rerun with --force to replace them")
+
+    for rel in meta.get("installed", []):
+        path = target / rel
+        if path.is_symlink() or path.is_file():
+            path.unlink(missing_ok=True)
+        elif path.exists():
+            shutil.rmtree(path)
+
+    agent_selection = meta.get("agent_selection")
+    if not agent_selection:
+        old_agent = meta.get("agent", "universal")
+        agent_selection = old_agent if old_agent in REGISTRY else "universal"
+    update_mode = "copy" if args.copy else "link" if args.link else meta.get("mode", "copy")
+    _install_impl(
+        target=target,
+        agent_selection=agent_selection,
+        mode=update_mode,
+        force=False,
+        manage_gitignore=bool(meta.get("gitignore_managed", True)),
+    )
+    print("updated potetos-for-everyone")
+
+
+def uninstall(args):
+    target = Path(args.target).resolve()
+    mp, meta = _load_manifest(target)
+    for rel in meta.get("installed", []):
+        path = target / rel
+        if path.is_symlink() or path.is_file():
+            path.unlink(missing_ok=True)
+        elif path.exists():
+            shutil.rmtree(path)
+    skill_dir = target / meta.get("skill_dir", ".agents/skills")
+    _prune_empty_parents(skill_dir, target)
+    for rel in meta.get("instruction_files", ["AGENTS.md"]):
+        instruction = target / rel
+        remove_block(instruction)
+        if not instruction.exists():
+            _prune_empty_parents(instruction.parent, target)
+    if meta.get("gitignore_managed"):
+        remove_gitignore(target / ".gitignore")
+    mp.unlink(missing_ok=True)
+    _prune_empty_parents(mp.parent, target)
+    print(f"uninstalled potetos-for-everyone from {target}")
+
+
+def list_skills(_args):
+    for path in sorted((REPO / "skills").iterdir()):
+        if (path / "SKILL.md").exists():
+            print(path.name)
+
+
+def status(args):
+    target = Path(args.target).resolve()
+    mp = target / MANIFEST
+    if not mp.exists():
+        print(f"not installed in {target}")
+        raise SystemExit(1)
+    _, meta = _load_manifest(target)
+    modified = _modified_managed_paths(target, meta)
+    installed = len(meta.get("installed", []))
+    print(f"installed: {installed} skills")
+    print(f"compatibility: {meta.get('agent_selection', ','.join(meta.get('agents', [])) or 'unknown')}")
+    print(f"mode: {meta.get('mode', 'unknown')}")
+    if modified:
+        print(f"state: modified ({len(modified)} managed paths differ)")
+        for rel in modified[:10]:
+            print(f"  {rel}")
+        raise SystemExit(1)
+    print("state: clean")
+
+
+def doctor(args):
+    target = Path(args.target).resolve()
+    print(f"repo: {REPO}")
+    print(f"target: {target} ({'ok' if target.exists() else 'missing'})")
+    print(f"python: {sys.version.split()[0]}")
+    canonical = sum(1 for p in (REPO / "skills").iterdir() if (p / "SKILL.md").exists())
+    print(f"canonical skills: {canonical}")
+    print("native Agent Skills path: .agents/skills/")
+    if (target / MANIFEST).exists():
+        try:
+            _, meta = _load_manifest(target)
+            modified = _modified_managed_paths(target, meta)
+            print(f"install: {len(meta.get('installed', []))} managed skills, {'modified' if modified else 'clean'}")
+        except SystemExit:
+            pass
+    else:
+        print("install: not installed")
+    print("adapters:")
+    for name, spec in sorted(REGISTRY.items()):
+        found = (target / spec["instruction_file"]).exists() if target.exists() else False
+        print(
+            f"  {name:10} skills={spec['skill_dir']:16} instructions={spec['instruction_file']}"
+            + (" [present]" if found else "")
+        )
+
+
+def _prompt_from_args(args):
+    if bool(args.prompt) == bool(args.prompt_file):
+        die("provide exactly one of --prompt or --prompt-file")
+    if args.prompt is not None:
+        return args.prompt
+    return Path(args.prompt_file).read_text(encoding="utf-8")
+
+
+def _runner_config(args, workspace: Path):
+    path = Path(args.config).resolve() if args.config else workspace / ".potetos/config.json"
+    try:
+        return load_config(path)
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        die(str(exc))
+
+
+def delegate(args):
+    workspace = Path(args.workspace).resolve()
+    prompt = _prompt_from_args(args)
+    config = _runner_config(args, workspace)
+    runs_dir = Path(args.runs_dir).resolve() if args.runs_dir else workspace / ".potetos/runs"
+    try:
+        result = run_worker(
+            config=config,
+            runner=args.runner,
+            prompt=prompt,
+            workspace=workspace,
+            runs_dir=runs_dir,
+            isolate=args.isolate,
+        )
+    except (OSError, RuntimeError, ValueError, KeyError) as exc:
+        die(str(exc))
+    print(json.dumps(result.__dict__, indent=2))
+    raise SystemExit(0 if result.returncode == 0 else result.returncode)
+
+
+def panel(args):
+    workspace = Path(args.workspace).resolve()
+    prompt = _prompt_from_args(args)
+    config = _runner_config(args, workspace)
+    names = [x.strip() for x in args.runners.split(",") if x.strip()] if args.runners else list(config["runners"])
+    runs_dir = Path(args.runs_dir).resolve() if args.runs_dir else workspace / ".potetos/runs"
+    try:
+        run_id, results = run_panel(
+            config=config,
+            runner_names=names,
+            prompt=prompt,
+            workspace=workspace,
+            runs_dir=runs_dir,
+            isolate=args.isolate,
+            max_parallel=args.max_parallel,
+        )
+    except (OSError, RuntimeError, ValueError, KeyError) as exc:
+        die(str(exc))
+    payload = {"run_id": run_id, "results": [r.__dict__ for r in results]}
+    print(json.dumps(payload, indent=2))
+    if any(r.returncode for r in results):
+        raise SystemExit(1)
+
+
+def main():
+    if sys.version_info < (3, 10):
+        die("Python 3.10 or newer is required")
+    ap = argparse.ArgumentParser(
+        prog="potetos",
+        description="Install Lauren Tan's pstack engineering workflow as portable Agent Skills.",
+    )
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    p = sub.add_parser("install", help="install the skills into a project")
+    p.add_argument("--target", default=".")
+    p.add_argument("--agent", default="all", choices=["all"] + sorted(REGISTRY))
+    mode = p.add_mutually_exclusive_group()
+    mode.add_argument("--copy", action="store_true", help="copy skills (default; self-contained and remote-safe)")
+    mode.add_argument("--link", action="store_true", help="symlink skills for local development")
+    p.add_argument("--force", action="store_true", help="replace colliding skill directories")
+    p.add_argument("--no-gitignore", action="store_true", help="do not add the local .potetos/ state directory to .gitignore")
+    p.set_defaults(fn=install)
+
+    p = sub.add_parser("update", help="refresh an existing managed install without clobbering local edits")
+    p.add_argument("--target", default=".")
+    p.add_argument("--force", action="store_true", help="replace managed skills even if they were edited")
+    update_mode = p.add_mutually_exclusive_group()
+    update_mode.add_argument("--copy", action="store_true", help="migrate the managed install to self-contained copies")
+    update_mode.add_argument("--link", action="store_true", help="migrate the managed install to local-development symlinks")
+    p.set_defaults(fn=update)
+
+    p = sub.add_parser("uninstall", help="remove only files managed by potetos-for-everyone")
+    p.add_argument("--target", default=".")
+    p.set_defaults(fn=uninstall)
+
+    p = sub.add_parser("status", help="show whether an install is present and clean")
+    p.add_argument("--target", default=".")
+    p.set_defaults(fn=status)
+
+    p = sub.add_parser("list")
+    p.set_defaults(fn=list_skills)
+
+    p = sub.add_parser("doctor")
+    p.add_argument("--target", default=".")
+    p.set_defaults(fn=doctor)
+
+    p = sub.add_parser("delegate", help="run one configured external AI agent as an isolated or in-place worker")
+    p.add_argument("--workspace", default=".")
+    p.add_argument("--runner", default="default")
+    p.add_argument("--config")
+    p.add_argument("--prompt")
+    p.add_argument("--prompt-file")
+    p.add_argument("--runs-dir")
+    p.add_argument("--isolate", action="store_true", help="create a clean git worktree and branch for the worker")
+    p.set_defaults(fn=delegate)
+
+    p = sub.add_parser("panel", help="fan the same prompt out to configured external AI agents")
+    p.add_argument("--workspace", default=".")
+    p.add_argument("--runners", help="comma-separated runner profile names; defaults to all configured runners")
+    p.add_argument("--config")
+    p.add_argument("--prompt")
+    p.add_argument("--prompt-file")
+    p.add_argument("--runs-dir")
+    p.add_argument("--isolate", action="store_true", help="give every runner its own clean git worktree and branch")
+    p.add_argument("--max-parallel", type=int)
+    p.set_defaults(fn=panel)
+
+    args = ap.parse_args()
+    args.fn(args)
+
+
+if __name__ == "__main__":
+    main()

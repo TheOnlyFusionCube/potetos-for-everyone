@@ -1,0 +1,1 @@
+Use the `reproduce-and-fix-issues` skill on this confirmed report. Reproduce before editing, isolate workspace changes when possible, prepare only a minimal draft fix, and return proof to the originating thread/ticket.

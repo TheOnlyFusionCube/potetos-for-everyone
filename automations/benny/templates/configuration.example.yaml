@@ -1,0 +1,11 @@
+# Host-owned example. Do not put secrets in committed configuration.
+source:
+  kind: issue-tracker-or-chat
+  project: your-project
+routing:
+  triage: triage-issue-reports
+  confirmed_bug: reproduce-and-fix-issues
+safety:
+  triage_read_only: true
+  fixes_are_draft_by_default: true
+  never_merge_automatically: true

@@ -1,0 +1,46 @@
+{
+  "generic": {
+    "instruction_file": "AGENTS.md",
+    "skill_dir": ".agents/skills"
+  },
+  "universal": {
+    "instruction_file": "AGENTS.md",
+    "skill_dir": ".agents/skills"
+  },
+  "cursor": {
+    "instruction_file": ".cursor/rules/potetos-for-everyone.mdc",
+    "skill_dir": ".agents/skills"
+  },
+  "claude": {
+    "instruction_file": "CLAUDE.md",
+    "skill_dir": ".agents/skills"
+  },
+  "codex": {
+    "instruction_file": "AGENTS.md",
+    "skill_dir": ".agents/skills"
+  },
+  "gemini": {
+    "instruction_file": "GEMINI.md",
+    "skill_dir": ".agents/skills"
+  },
+  "copilot": {
+    "instruction_file": ".github/copilot-instructions.md",
+    "skill_dir": ".agents/skills"
+  },
+  "windsurf": {
+    "instruction_file": ".windsurf/rules/potetos-for-everyone.md",
+    "skill_dir": ".agents/skills"
+  },
+  "cline": {
+    "instruction_file": ".clinerules/potetos-for-everyone.md",
+    "skill_dir": ".agents/skills"
+  },
+  "roo": {
+    "instruction_file": ".roo/rules/potetos-for-everyone.md",
+    "skill_dir": ".agents/skills"
+  },
+  "continue": {
+    "instruction_file": ".continue/rules/potetos-for-everyone.md",
+    "skill_dir": ".agents/skills"
+  }
+}
