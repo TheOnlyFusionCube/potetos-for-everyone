@@ -4,7 +4,7 @@ import json, re, sys
 ROOT=Path(__file__).resolve().parents[1]
 SKILLS=ROOT/'skills'
 errors=[]
-inventory=json.loads((ROOT/'UPSTREAM_INVENTORY.json').read_text())
+inventory=json.loads((ROOT/'UPSTREAM_INVENTORY.json').read_text(encoding='utf-8'))
 required_skills=set(inventory['public_skills']) | set(inventory['principles'])
 required_playbooks=set(inventory['poteto_mode_playbooks'])
 # Vendor primitives are banned only in canonical skill bodies. Ordinary words such as Cursor may appear when crediting provenance.
@@ -14,7 +14,7 @@ for d in sorted(SKILLS.iterdir()):
     f=d/'SKILL.md'
     if not f.exists():
         errors.append(f'{d}: missing SKILL.md'); continue
-    text=f.read_text()
+    text=f.read_text(encoding='utf-8')
     m=re.match(r'^---\n(.*?)\n---\n',text,re.S)
     if not m:
         errors.append(f'{f}: invalid/missing frontmatter'); continue
@@ -38,7 +38,7 @@ extra=found-required_playbooks
 if missing: errors.append('missing playbooks: '+', '.join(sorted(missing)))
 if extra: errors.append('unexpected playbooks not in tracked upstream inventory: '+', '.join(sorted(extra)))
 
-registry=json.loads((ROOT/'adapters'/'registry.json').read_text())
+registry=json.loads((ROOT/'adapters'/'registry.json').read_text(encoding='utf-8'))
 required_adapters={'generic','universal','cursor','claude','codex','gemini','copilot','windsurf','cline','roo','continue'}
 missing_adapters=required_adapters-set(registry)
 if missing_adapters: errors.append('missing adapters: '+', '.join(sorted(missing_adapters)))
@@ -47,7 +47,7 @@ for name,spec in registry.items():
     instruction=Path(spec.get('instruction_file',''))
     if instruction.is_absolute() or '..' in instruction.parts: errors.append(f'adapter {name}: unsafe instruction_file')
 
-lic=(ROOT/'LICENSE').read_text(); notice=(ROOT/'NOTICE.md').read_text(); readme=(ROOT/'README.md').read_text()
+lic=(ROOT/'LICENSE').read_text(encoding='utf-8'); notice=(ROOT/'NOTICE.md').read_text(encoding='utf-8'); readme=(ROOT/'README.md').read_text(encoding='utf-8')
 for label,text in [('LICENSE',lic),('NOTICE',notice),('README',readme)]:
     if 'Lauren Tan' not in text: errors.append(f'{label}: Lauren Tan attribution missing')
 if 'Copyright (c) 2026 Lauren Tan' not in lic: errors.append('LICENSE: upstream copyright notice missing')
