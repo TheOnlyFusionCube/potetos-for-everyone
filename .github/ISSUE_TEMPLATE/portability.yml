@@ -1,0 +1,28 @@
+name: Portability / Agent Request
+description: Request support or report portability problems with an AI agent or coding tool
+title: "[Portability]: "
+labels: ["portability"]
+body:
+  - type: markdown
+    attributes:
+      value: potetos-for-everyone aims to make pstack skills portable across any AI coding agent.
+  - type: input
+    id: agent
+    attributes:
+      label: Target Agent / Tool
+      description: Name and version of the agent or host (e.g. Cursor, Claude Code, Windsurf, Roo, etc.)
+      placeholder: Claude Code 0.2.9
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Portability gap or requirement
+      description: What capability, instruction format, or rule is needed?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed adapter or shim
+      description: Suggested configuration or instruction file placement.

@@ -23,35 +23,38 @@
 
 ## Install. Prompt. Ship.
 
-From the repo where you want Poteto Mode:
+### 1. Install
+
+Pick the method that matches your workflow:
+
+#### Option A: Zero setup / one-command (recommended)
+Installs or updates skills directly into the current repository without adding a package dependency:
+
+```bash
+npx potetos
+```
+*(or `npx potetos-for-everyone`)*
+
+#### Option B: Project dev dependency (npm / pnpm / bun / yarn)
+Automatically installs and updates skills via `postinstall`:
 
 ```bash
 npm install --save-dev potetos-for-everyone
+# or: pnpm add -D potetos-for-everyone
+# or: bun add -d potetos-for-everyone
+# or: yarn add -D potetos-for-everyone
 ```
 
-Then tell your coding agent:
-
-```text
-Use poteto-mode.
-```
-
-**That's it.** The npm package has **zero npm dependencies** and automatically installs the portable skills, agent shims, and `AGENTS.md` fallback into the project.
-
-Prefer no dependency?
-
-```bash
-npx --yes potetos-for-everyone install
-```
-
-Prefer a global CLI?
-
+#### Option C: Global CLI
 ```bash
 npm install --global potetos-for-everyone
 potetos install
 ```
 
 <details>
-<summary><strong>Non-npm fallback</strong></summary>
+<summary><strong>Non-npm standalone installer (curl / PowerShell)</strong></summary>
+
+No Node or npm required. Detects Node, Python, or runs native POSIX shell / PowerShell:
 
 macOS / Linux:
 
@@ -66,6 +69,16 @@ irm https://raw.githubusercontent.com/TheOnlyFusionCube/potetos-for-everyone/mai
 ```
 
 </details>
+
+### 2. Prompt
+
+Tell your coding agent:
+
+```text
+Use poteto-mode.
+```
+
+**That's it.** The npm package has **zero npm dependencies** and automatically sets up the portable skills, agent shims, and `AGENTS.md` fallback into your project.
 
 ---
 
@@ -295,7 +308,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [PUBLISHING.md](PUBLISHING.md).
 
 ## Upstream & credit
 
-This adaptation currently tracks [`cursor/plugins/pstack` at `d7cde2b`](https://github.com/cursor/plugins/commit/d7cde2b84eadbcd6fd890302c876f4436ccb6d82).
+This adaptation currently tracks [`cursor/plugins/pstack` at `71ed0d1`](https://github.com/cursor/plugins/commit/71ed0d1076fec562c1b74ee353121a8d00f75382).
 
 It is **not a byte-for-byte mirror**. Host-specific mechanics are rewritten against the portability contract while preserving the workflow architecture, useful public skill names, engineering intent, and attribution.
 

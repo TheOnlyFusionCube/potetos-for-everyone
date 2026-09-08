@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import childProcess from "node:child_process";
+import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { PACKAGE_ROOT, doctor, install, listSkills, status, uninstall, update } from "./core.mjs";
@@ -15,7 +16,7 @@ function parse(argv) {
     const arg = argv[i];
     if (!arg.startsWith("--")) { out._.push(arg); continue; }
     const key = arg.slice(2);
-    if (["force", "no-gitignore", "copy", "link"].includes(key)) out[key] = true;
+    if (["force", "no-gitignore", "copy", "link", "help", "version"].includes(key)) out[key] = true;
     else {
       if (i + 1 >= argv.length) fail(`missing value for --${key}`);
       out[key] = argv[++i];
@@ -25,7 +26,26 @@ function parse(argv) {
 }
 
 function help() {
-  console.log(`potetos-for-everyone\n\nUsage:\n  potetos install [--target .] [--agent all] [--force]\n  potetos update [--target .] [--force]\n  potetos status [--target .]\n  potetos uninstall [--target .]\n  potetos list\n  potetos doctor [--target .]\n  potetos delegate ...     # forwards to bundled Python runner\n  potetos panel ...        # forwards to bundled Python runner\n\nLocal npm installs auto-install/update the skills. Set POTETOS_SKIP_AUTO_INSTALL=1 to disable that lifecycle behavior.`);
+  console.log(`potetos-for-everyone
+
+Usage:
+  npx potetos                     # auto-installs or updates in current repo
+  potetos install [--target .] [--agent all] [--force]
+  potetos update [--target .] [--force]
+  potetos status [--target .]
+  potetos uninstall [--target .]
+  potetos list
+  potetos doctor [--target .]
+  potetos delegate ...            # forwards to bundled Python runner
+  potetos panel ...               # forwards to bundled Python runner
+
+Package manager zero-config install:
+  npm install --save-dev potetos-for-everyone
+  pnpm add -D potetos-for-everyone
+  bun add -d potetos-for-everyone
+  yarn add -D potetos-for-everyone
+
+Local npm installs auto-install/update the skills. Set POTETOS_SKIP_AUTO_INSTALL=1 to disable that lifecycle behavior.`);
 }
 
 function printInstall(result, verb = "installed") {
@@ -50,13 +70,25 @@ function forwardPython(command, rest) {
 }
 
 const argv = process.argv.slice(2);
-const command = argv.shift();
-if (!command || ["help", "--help", "-h"].includes(command)) { help(); process.exit(0); }
-if (["--version", "-v", "version"].includes(command)) {
+
+if (argv.includes("--help") || argv.includes("-h") || argv[0] === "help") {
+  help();
+  process.exit(0);
+}
+
+if (argv.includes("--version") || argv.includes("-v") || argv[0] === "version") {
   const { packageVersion } = await import("./core.mjs");
   console.log(packageVersion());
   process.exit(0);
 }
+
+let command = argv[0];
+if (!command || command.startsWith("--")) {
+  command = "auto";
+} else {
+  command = argv.shift();
+}
+
 if (["delegate", "panel"].includes(command)) forwardPython(command, argv);
 
 const args = parse(argv);
@@ -64,6 +96,15 @@ const target = args.target || ".";
 if (args.link) fail("the npm CLI installs self-contained copies only; use a source checkout with the Python CLI for development symlinks");
 try {
   switch (command) {
+    case "auto": {
+      const manifestPath = path.join(path.resolve(target), ".potetos", "install.json");
+      if (fs.existsSync(manifestPath)) {
+        printInstall(update({ target, force: !!args.force }), "updated");
+      } else {
+        printInstall(install({ target, agent: args.agent || "all", force: !!args.force, manageGitignore: !args["no-gitignore"] }));
+      }
+      break;
+    }
     case "install":
       printInstall(install({ target, agent: args.agent || "all", force: !!args.force, manageGitignore: !args["no-gitignore"] }));
       break;

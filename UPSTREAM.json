@@ -3,7 +3,7 @@
   "author": "Lauren Tan",
   "github": "https://github.com/cursor/plugins/tree/main/pstack",
   "license": "MIT",
-  "baseline_commit": "d7cde2b84eadbcd6fd890302c876f4436ccb6d82",
-  "baseline_date_utc": "2026-09-08T00:00:12Z",
+  "baseline_commit": "71ed0d1076fec562c1b74ee353121a8d00f75382",
+  "baseline_date_utc": "2026-09-08T05:16:53Z",
   "adaptation": "capability-based, Agent Skills compatible; not a verbatim mirror"
 }

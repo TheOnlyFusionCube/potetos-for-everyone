@@ -1,0 +1,40 @@
+name: Bug Report
+description: Report an issue with potetos-for-everyone
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time to report an issue.
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Node version, Python version, agent / tool version
+      placeholder: macOS 15, Node 22, Python 3.12, Cursor / Claude Code
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what happened.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Steps or commands to reproduce the issue.
+      placeholder: |
+        1. Run 'potetos install'
+        2. Inspect output
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What you expected to happen.
+    validations:
+      required: true

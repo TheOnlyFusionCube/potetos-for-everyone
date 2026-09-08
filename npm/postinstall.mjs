@@ -4,7 +4,7 @@ import { autoInstall, isPackageDevelopmentInstall } from "./core.mjs";
 const skip = process.env.POTETOS_SKIP_AUTO_INSTALL === "1" || process.env.POTETOS_SKIP_AUTO_INSTALL === "true";
 const globalInstall = process.env.npm_config_global === "true" || process.env.npm_config_global === "1";
 const execInstall = process.env.npm_command === "exec";
-const target = process.env.INIT_CWD;
+const target = process.env.INIT_CWD || process.env.PWD || process.cwd();
 
 if (skip || globalInstall || execInstall || !target || isPackageDevelopmentInstall(target)) {
   if (globalInstall) console.log("potetos: global CLI installed; run `potetos install` inside a project.");

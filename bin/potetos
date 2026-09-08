@@ -535,6 +535,10 @@ def main():
     p.add_argument("--max-parallel", type=int)
     p.set_defaults(fn=panel)
 
+    if len(sys.argv) == 1:
+        manifest = Path(".").resolve() / MANIFEST
+        sys.argv.append("update" if manifest.exists() else "install")
+
     args = ap.parse_args()
     args.fn(args)
 

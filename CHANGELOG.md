@@ -7,6 +7,8 @@ All notable changes to `potetos-for-everyone` will be documented here.
 ### Added
 
 - Portable adaptation of Lauren Tan's pstack with 47 canonical skills and 23 Poteto Mode playbooks.
+- Synced with upstream cursor/plugins/pstack at 71ed0d1 (23 playbooks, 23 principles).
+- Enhanced CLI and bootstrap installers with zero-friction defaults (npx auto-install/update without subcommands, cross-runtime runner fallback for node, bun, python, and shell).
 - Thin compatibility shims for major AI coding-agent hosts.
 - Zero-dependency installer, safe updater, uninstaller, status, doctor, and external-agent runner.
 - One-line macOS/Linux and PowerShell bootstrap installers.

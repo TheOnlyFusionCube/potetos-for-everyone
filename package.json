@@ -27,6 +27,7 @@
     "README.md"
   ],
   "scripts": {
+    "test": "node --test tests/npm.test.mjs",
     "postinstall": "node npm/postinstall.mjs",
     "test:npm": "node --test tests/npm.test.mjs",
     "check:pack": "node scripts/check_npm_package.mjs",

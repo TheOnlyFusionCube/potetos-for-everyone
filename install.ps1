@@ -9,11 +9,12 @@ $Source = $env:POTETOS_SOURCE_DIR
 $TempRoot = $null
 $EphemeralSource = $false
 
-function Find-Python {
+function Find-Runner {
+    if (Get-Command node -ErrorAction SilentlyContinue) { return "node" }
     foreach ($candidate in @("python3", "python", "py")) {
         if (Get-Command $candidate -ErrorAction SilentlyContinue) { return $candidate }
     }
-    throw "potetos: Python 3 is required."
+    return "powershell"
 }
 
 try {
@@ -32,28 +33,64 @@ try {
         }
     }
 
-    $Python = Find-Python
-    $Cli = Join-Path $Source "bin/potetos"
-    if (-not (Test-Path $Cli)) { throw "potetos: invalid source directory: $Source" }
-
     $Manifest = Join-Path $Target ".potetos/install.json"
     if ($Action -eq "auto") {
         $Action = if (Test-Path $Manifest) { "update" } else { "install" }
     }
-    switch ($Action) {
-        "install" { & $Python $Cli install --target $Target --agent $Agent }
-        "update" {
-            $Args = @($Cli, "update", "--target", $Target)
-            if ($EphemeralSource) { $Args += "--copy" }
-            if ($env:POTETOS_FORCE -eq "1") { $Args += "--force" }
-            & $Python @Args
+
+    $Runner = Find-Runner
+    if ($Runner -eq "node") {
+        $Cli = Join-Path $Source "npm/potetos.mjs"
+        switch ($Action) {
+            "install" { & node $Cli install --target $Target --agent $Agent }
+            "update" {
+                $Args = @($Cli, "update", "--target", $Target)
+                if ($env:POTETOS_FORCE -eq "1") { $Args += "--force" }
+                & node @Args
+            }
+            "uninstall" { & node $Cli uninstall --target $Target }
+            "status" { & node $Cli status --target $Target }
+            "doctor" { & node $Cli doctor --target $Target }
+            default { throw "potetos: unknown action: $Action" }
         }
-        "uninstall" { & $Python $Cli uninstall --target $Target }
-        "status" { & $Python $Cli status --target $Target }
-        "doctor" { & $Python $Cli doctor --target $Target }
-        default { throw "potetos: unknown bootstrap action: $Action" }
+    } elseif ($Runner -in @("python3", "python", "py")) {
+        $Cli = Join-Path $Source "bin/potetos"
+        switch ($Action) {
+            "install" { & $Runner $Cli install --target $Target --agent $Agent }
+            "update" {
+                $Args = @($Cli, "update", "--target", $Target)
+                if ($EphemeralSource) { $Args += "--copy" }
+                if ($env:POTETOS_FORCE -eq "1") { $Args += "--force" }
+                & $Runner @Args
+            }
+            "uninstall" { & $Runner $Cli uninstall --target $Target }
+            "status" { & $Runner $Cli status --target $Target }
+            "doctor" { & $Runner $Cli doctor --target $Target }
+            default { throw "potetos: unknown action: $Action" }
+        }
+    } else {
+        # Native PowerShell fallback
+        $SkillsDst = Join-Path $Target ".agents/skills"
+        switch ($Action) {
+            "install" {
+                New-Item -ItemType Directory -Force -Path $SkillsDst | Out-Null
+                Copy-Item -Recurse -Force (Join-Path $Source "skills/*") $SkillsDst
+                $PotetosDir = Join-Path $Target ".potetos"
+                New-Item -ItemType Directory -Force -Path $PotetosDir | Out-Null
+                '{"mode": "copy", "skills": ".agents/skills", "installer": "powershell"}' | Out-File -Encoding utf8 (Join-Path $PotetosDir "install.json")
+                $AgentsMd = Join-Path $Target "AGENTS.md"
+                "`n<!-- potetos-for-everyone:begin -->`n## potetos-for-everyone`n`nFor non-trivial engineering work, use the Agent Skill at `.agents/skills/poteto-mode/SKILL.md`.`n<!-- potetos-for-everyone:end -->`n" | Out-File -Append -Encoding utf8 $AgentsMd
+                Write-Host "installed skills in $Target"
+                Write-Host "ready: ask your agent to use poteto-mode"
+            }
+            "uninstall" {
+                if (Test-Path $SkillsDst) { Remove-Item -Recurse -Force $SkillsDst }
+                if (Test-Path (Join-Path $Target ".potetos")) { Remove-Item -Recurse -Force (Join-Path $Target ".potetos") }
+                Write-Host "uninstalled potetos-for-everyone from $Target"
+            }
+            default { throw "potetos: $Action requires Node.js or Python." }
+        }
     }
-    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 finally {
     if ($TempRoot -and (Test-Path $TempRoot)) { Remove-Item -Recurse -Force $TempRoot }
