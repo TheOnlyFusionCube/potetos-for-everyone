@@ -1,0 +1,13 @@
+{
+  "baseline": "d7cde2b84eadbcd6fd890302c876f4436ccb6d82",
+  "public_skills": [
+    "poteto-mode", "how", "why", "recall", "blast-radius", "architect", "arena", "swarm", "interrogate", "automate-me", "make-bot-ui", "setup-pstack", "reflect", "teach", "tdd", "no-comments", "typescript-best-practices", "figure-it-out", "show-me-your-work", "create-verification-skill", "maintain-verification-skill", "unslop", "bro", "technical-writing"
+  ],
+  "principles": [
+    "principle-laziness-protocol", "principle-foundational-thinking", "principle-redesign-from-first-principles", "principle-attack-the-premise", "principle-subtract-before-you-add", "principle-minimize-reader-load", "principle-outcome-oriented-execution", "principle-experience-first", "principle-exhaust-the-design-space", "principle-build-the-lever", "principle-model-the-domain", "principle-boundary-discipline", "principle-type-system-discipline", "principle-make-operations-idempotent", "principle-migrate-callers-then-delete-legacy-apis", "principle-separate-before-serializing-shared-state", "principle-prove-it-works", "principle-fix-root-causes", "principle-sequence-verifiable-units", "principle-test-behavior-not-implementation", "principle-guard-the-context-window", "principle-never-block-on-the-human", "principle-encode-lessons-in-structure"
+  ],
+  "poteto_mode_playbooks": [
+    "investigation", "bug-fix", "perf-issue", "hillclimb", "runtime-forensics", "trace-forensics", "feature", "refactoring", "prototype", "visual-parity", "authoring-a-skill", "eval", "babysit", "shipping", "autonomous-run", "orchestrate", "autopilot-full", "autopilot-stack", "session-pickup", "pause-safely", "multi-phase-plan", "worktree-cleanup", "opening-a-pr"
+  ],
+  "optional_packs": ["automations/benny"]
+}

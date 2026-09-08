@@ -1,0 +1,59 @@
+{
+  "name": "potetos-for-everyone",
+  "version": "0.1.0",
+  "description": "Lauren Tan's pstack engineering workflow, made portable across AI coding agents.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "potetos": "npm/potetos.mjs",
+    "potetos-for-everyone": "npm/potetos.mjs"
+  },
+  "files": [
+    "npm/",
+    "bin/",
+    "runtime/",
+    "adapters/",
+    "skills/",
+    "agents/",
+    "automations/",
+    "docs/",
+    "AGENTS.md",
+    "PORTABILITY.md",
+    "NOTICE.md",
+    "UPSTREAM.json",
+    "UPSTREAM_INVENTORY.json",
+    "VERSION",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "postinstall": "node npm/postinstall.mjs",
+    "test:npm": "node --test tests/npm.test.mjs",
+    "check:pack": "node scripts/check_npm_package.mjs",
+    "prepack": "node scripts/check_npm_package.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TheOnlyFusionCube/potetos-for-everyone.git"
+  },
+  "homepage": "https://github.com/TheOnlyFusionCube/potetos-for-everyone#readme",
+  "bugs": {
+    "url": "https://github.com/TheOnlyFusionCube/potetos-for-everyone/issues"
+  },
+  "keywords": [
+    "pstack",
+    "agent-skills",
+    "ai-agents",
+    "coding-agents",
+    "cursor",
+    "claude-code",
+    "codex",
+    "developer-tools"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

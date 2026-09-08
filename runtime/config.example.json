@@ -1,0 +1,17 @@
+{
+  "max_parallel": 4,
+  "runners": {
+    "default": {
+      "command": ["your-agent-cli", "--prompt-file", "{prompt_file}"],
+      "stdin": false,
+      "timeout_seconds": 1800,
+      "env_passthrough": []
+    },
+    "reviewer": {
+      "command": ["another-agent-cli", "--prompt", "{prompt}"],
+      "stdin": false,
+      "timeout_seconds": 1800,
+      "env_passthrough": []
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "capabilities": {
+    "files.read": {
+      "required": true
+    },
+    "files.write": {
+      "required": false,
+      "fallback": "return patch/draft"
+    },
+    "run": {
+      "required": false,
+      "fallback": "report verification gap"
+    },
+    "vcs": {
+      "required": false,
+      "fallback": "workspace evidence only"
+    },
+    "delegate": {
+      "required": false,
+      "fallback": "sequential labeled passes"
+    },
+    "search": {
+      "required": false,
+      "fallback": "available local evidence only"
+    },
+    "observe": {
+      "required": false,
+      "fallback": "proxy evidence, explicitly labeled"
+    },
+    "track": {
+      "required": false,
+      "fallback": "Markdown/TSV log when writable"
+    }
+  }
+}
