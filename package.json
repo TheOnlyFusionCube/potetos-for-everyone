@@ -81,11 +81,17 @@
     "test-driven-development",
     "multi-agent",
     "subagents",
-    "unslop",
+    "pi-package",
+    "pi-pstack",
     "open-pstack",
     "skills-cli",
+    "pstack-without-cursor",
     "worktrees"
   ],
+  "pi": {
+    "skills": ["./skills"],
+    "prompts": [".codex-plugin/prompts"]
+  },
   "publishConfig": {
     "access": "public"
   }
