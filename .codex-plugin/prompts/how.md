@@ -1,0 +1,6 @@
+---
+name: how
+description: Trace how a subsystem works using code and runtime evidence. Use for architecture walkthroughs, data flow, call paths, and are-we-sure investigations.
+---
+
+Invoke the `how` skill and follow it.

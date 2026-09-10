@@ -1,0 +1,13 @@
+{
+  "name": "pstack",
+  "displayName": "pstack / poteto-mode (Universal Multi-Agent Edition)",
+  "version": "0.15.0",
+  "description": "Lauren Tan's pstack and Poteto Mode engineering workflow for Codex, Claude Code, and any AI coding agent.",
+  "author": {
+    "name": "TheOnlyFusionCube",
+    "url": "https://github.com/TheOnlyFusionCube"
+  },
+  "homepage": "https://github.com/TheOnlyFusionCube/potetos-for-everyone",
+  "repository": "https://github.com/TheOnlyFusionCube/potetos-for-everyone",
+  "license": "MIT"
+}

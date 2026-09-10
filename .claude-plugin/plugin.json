@@ -1,0 +1,36 @@
+{
+  "name": "pstack",
+  "displayName": "pstack / poteto-mode (Universal Claude Code & Multi-Agent Edition)",
+  "version": "0.15.0",
+  "description": "If you want to go fast, go deep first. Lauren Tan's pstack and Poteto Mode engineering workflow: evidence-first, minimal blast radius, TDD, behavioral verification, and parallel execution. Upstream v0.15.0+.",
+  "author": {
+    "name": "TheOnlyFusionCube",
+    "url": "https://github.com/TheOnlyFusionCube"
+  },
+  "homepage": "https://github.com/TheOnlyFusionCube/potetos-for-everyone",
+  "repository": "https://github.com/TheOnlyFusionCube/potetos-for-everyone",
+  "license": "MIT",
+  "keywords": [
+    "pstack",
+    "pstack-claude",
+    "poteto-mode",
+    "claude-code",
+    "claude-code-plugin",
+    "claude-plugin",
+    "claude-skills",
+    "codex",
+    "codex-plugin",
+    "cursor",
+    "agent-skills",
+    "coding-agents",
+    "subagents",
+    "tdd",
+    "unslop",
+    "code-review",
+    "gemini-cli",
+    "prime-agent",
+    "opencode",
+    "windsurf",
+    "copilot"
+  ]
+}

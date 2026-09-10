@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "potetos-for-everyone",
+  "owner": {
+    "name": "TheOnlyFusionCube",
+    "url": "https://github.com/TheOnlyFusionCube"
+  },
+  "description": "Universal distribution of Lauren Tan's pstack & Poteto Mode for Claude Code, Cursor, Codex, Gemini CLI, Prime Agent, and all AI agents. (pstack-claude alternative & superset).",
+  "plugins": [
+    {
+      "name": "pstack",
+      "description": "Lauren Tan's pstack & Poteto Mode engineering workflow for Claude Code: evidence-first, minimal blast radius, TDD, and rigorous verification. Full v0.15.0+ upstream sync.",
+      "source": "./",
+      "category": "developer-tools",
+      "version": "0.15.0"
+    },
+    {
+      "name": "poteto-mode",
+      "description": "Poteto Mode workflow for Claude Code: disciplined engineering, systematic decomposition, and rigorous verification.",
+      "source": "./",
+      "category": "developer-tools",
+      "version": "0.15.0"
+    },
+    {
+      "name": "pstack-claude",
+      "description": "Drop-in replacement and superset for pstack-claude with complete upstream v0.15.0+ parity, SessionStart hooks, and multi-agent support.",
+      "source": "./",
+      "category": "developer-tools",
+      "version": "0.15.0"
+    }
+  ]
+}
