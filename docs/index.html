@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Use pstack Without Cursor | potetos-for-everyone</title>
+  <meta name="description" content="The definitive guide and universal distribution for running Lauren Tan's pstack and Poteto Mode outside of Cursor in Claude Code, Pi, Codex, and terminal agents." />
+  <meta name="keywords" content="pstack without cursor, how to use pstack without cursor, pstack-claude, pi-pstack, poteto-mode, claude code pstack, open-pstack, pstack terminal, agent skills, coding agents" />
+  <meta name="author" content="TheOnlyFusionCube" />
+  <link rel="canonical" href="https://theonlyfusioncube.github.io/potetos-for-everyone/" />
+
+  <!-- Open Graph / Facebook / LinkedIn -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://theonlyfusioncube.github.io/potetos-for-everyone/" />
+  <meta property="og:title" content="How to Use pstack Without Cursor | potetos-for-everyone" />
+  <meta property="og:description" content="Universal distribution of Lauren Tan's pstack for Claude Code, Pi Agent, Codex, Gemini, and terminal agents. 100% upstream parity (v0.15.0+), zero dependencies." />
+  <meta property="og:image" content="https://raw.githubusercontent.com/TheOnlyFusionCube/potetos-for-everyone/main/assets/logo.png" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="How to Use pstack Without Cursor | potetos-for-everyone" />
+  <meta name="twitter:description" content="Run pstack and Poteto Mode in Claude Code, Pi, Codex, and terminal agents. The modern, up-to-date alternative to pstack-claude and pi-pstack." />
+  <meta name="twitter:image" content="https://raw.githubusercontent.com/TheOnlyFusionCube/potetos-for-everyone/main/assets/logo.png" />
+
+  <!-- Schema.org JSON-LD Structured Data for Google Search & AI Overviews -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "potetos-for-everyone",
+        "alternateName": [
+          "pstack without cursor",
+          "pstack-claude",
+          "pi-pstack",
+          "pstack for claude code",
+          "open-pstack",
+          "pstack-codex",
+          "poteto-mode"
+        ],
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Cross-platform (macOS, Linux, Windows)",
+        "description": "Universal distribution of Lauren Tan's pstack and Poteto Mode engineering workflow for Claude Code, Pi Coding Agent, Codex, Gemini, and terminal AI agents.",
+        "url": "https://github.com/TheOnlyFusionCube/potetos-for-everyone",
+        "downloadUrl": "https://www.npmjs.com/package/potetos-for-everyone",
+        "softwareVersion": "0.15.0",
+        "license": "https://opensource.org/licenses/MIT",
+        "author": {
+          "@type": "Person",
+          "name": "Lauren Tan",
+          "url": "https://github.com/poteto"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How to use pstack without Cursor?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "You can use pstack outside of Cursor by installing potetos-for-everyone, the universal open-source distribution. It supports Claude Code natively via plugin (/plugin install pstack@potetos-for-everyone), Pi Coding Agent via pi install npm:potetos-for-everyone, OpenAI Codex via prompt linking, and all terminal agents via npx potetos."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can you use pstack in Claude Code?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Install potetos-for-everyone using Claude Code's native plugin manager: run `/plugin marketplace add TheOnlyFusionCube/potetos-for-everyone` then `/plugin install pstack@potetos-for-everyone`. It provides automatic SessionStart hooks and native subagents."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How to use pstack in Pi coding agent?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Run `pi install npm:potetos-for-everyone` in your terminal. It registers the pi-package manifest, all 47 canonical skills, and /poteto-mode."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What is the best alternative to pstack-claude and pi-pstack?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "potetos-for-everyone is the modern superset that replaces fragmented single-platform ports. While pstack-claude and pi-pstack are pinned to older releases, potetos-for-everyone tracks upstream pstack v0.15.0+ and supports Claude Code, Pi, Codex, and terminal agents in a single zero-dependency package."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card-bg: #161b22;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --heading: #f0f6fc;
+      --accent: #58a6ff;
+      --accent-hover: #1f6feb;
+      --badge-bg: #21262d;
+      --code-bg: #0d1117;
+      --green: #2ea44f;
+      --purple: #bc8cff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 2rem 1rem;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo {
+      width: 100px;
+      height: 100px;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      color: var(--heading);
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .tagline {
+      font-size: 1.25rem;
+      color: #8b949e;
+      margin-bottom: 1.5rem;
+    }
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .answer-box {
+      background: rgba(88, 166, 255, 0.1);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 2.5rem;
+      font-size: 1.1rem;
+    }
+    .answer-box strong { color: var(--heading); }
+    h2 {
+      color: var(--heading);
+      font-size: 1.75rem;
+      margin: 2.5rem 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    h3 {
+      color: var(--heading);
+      font-size: 1.3rem;
+      margin: 1.5rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; }
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      overflow-x: auto;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+      font-size: 0.95rem;
+      color: #79c0ff;
+      margin: 0.75rem 0 1.25rem;
+    }
+    code {
+      background: var(--badge-bg);
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.9em;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+      color: #ff7b72;
+    }
+    pre code {
+      background: transparent;
+      padding: 0;
+      color: inherit;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    @media(min-width: 768px) {
+      .grid { grid-template-columns: 1fr 1fr; }
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+    .card h3 { margin-top: 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      font-size: 0.95rem;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.75rem 1rem;
+      text-align: left;
+    }
+    th {
+      background: var(--card-bg);
+      color: var(--heading);
+    }
+    .faq-item {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 1rem;
+      padding: 1.25rem;
+    }
+    .faq-item h4 {
+      color: var(--heading);
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+    footer {
+      margin-top: 4rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      color: #8b949e;
+      font-size: 0.9rem;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .btn {
+      display: inline-block;
+      background: var(--green);
+      color: #fff;
+      font-weight: 600;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      margin-top: 1rem;
+      text-decoration: none;
+    }
+    .btn:hover { background: #2c974b; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <img class="logo" src="https://raw.githubusercontent.com/TheOnlyFusionCube/potetos-for-everyone/main/assets/logo.png" alt="potetos-for-everyone logo" />
+      <h1>How to Use pstack Without Cursor</h1>
+      <p class="tagline">The Universal Guide to Lauren Tan's pstack &amp; Poteto Mode for Claude Code, Pi, Codex, &amp; Terminal Agents</p>
+      <div class="badges">
+        <a href="https://github.com/TheOnlyFusionCube/potetos-for-everyone"><img src="https://img.shields.io/github/stars/TheOnlyFusionCube/potetos-for-everyone?style=flat&color=yellow" alt="GitHub stars" /></a>
+        <a href="https://www.npmjs.com/package/potetos-for-everyone"><img src="https://img.shields.io/npm/v/potetos-for-everyone?label=npm&color=cb3837" alt="npm" /></a>
+        <img src="https://img.shields.io/badge/Upstream-v0.15.0%2B-blue" alt="Upstream v0.15.0+" />
+        <img src="https://img.shields.io/badge/Dependencies-0-success" alt="Zero Dependencies" />
+        <img src="https://img.shields.io/badge/License-MIT-green" alt="MIT License" />
+      </div>
+      <a class="btn" href="https://github.com/TheOnlyFusionCube/potetos-for-everyone">View on GitHub &rarr;</a>
+    </header>
+
+    <div class="answer-box">
+      <strong>Can you use pstack outside of Cursor?</strong><br />
+      <strong>Yes.</strong> While pstack was originally created by Lauren Tan (@poteto) as a Cursor IDE plugin, its core behavior—consisting of <code>/poteto-mode</code>, 23 task playbooks, and 23 architectural principles—is defined in open Markdown specifications. <strong><code>potetos-for-everyone</code></strong> is the official universal distribution that brings this exact workflow to <strong>Claude Code</strong>, <strong>Pi Coding Agent</strong>, <strong>OpenAI Codex</strong>, and <strong>terminal agents</strong> with zero dependencies and zero manual file copying.
+    </div>
+
+    <h2>Why potetos-for-everyone Replaces Fragmented Ports</h2>
+    <p>Previously, running pstack without Cursor required juggling fragmented single-platform ports or manually copying Markdown files:</p>
+    <ul>
+      <li><strong><code>pstack-claude</code>:</strong> Pinned to older upstream v0.14.8 commits, restricted to Claude Code, and collapsed multi-model panels into a single vendor.</li>
+      <li><strong><code>pi-pstack</code>:</strong> Pinned to an older v0.1.0 release, tailored strictly for the Pi agent.</li>
+      <li><strong>Manual DIY Setups:</strong> Required cloning Cursor mirrors and maintaining Markdown copies by hand.</li>
+    </ul>
+    <p><strong><code>potetos-for-everyone</code> unifies all of them into a single continuously synced package (tracking v0.15.0+):</strong></p>
+
+    <h2>Step-by-Step Installation by Agent</h2>
+
+    <div class="grid">
+      <div class="card">
+        <h3>🟣 Claude Code (pstack-claude Replacement)</h3>
+        <p>Install via Claude Code's native plugin marketplace:</p>
+        <pre><code>/plugin marketplace add TheOnlyFusionCube/potetos-for-everyone
+/plugin install pstack@potetos-for-everyone</code></pre>
+        <p><strong>Features:</strong> Includes auto-firing <code>SessionStart</code> hooks (activates on startup, <code>/clear</code>, and compact) and registers native <code>poteto-agent</code> &amp; <code>comment-sicko</code> subagents.</p>
+      </div>
+
+      <div class="card">
+        <h3>🌸 Pi Coding Agent (pi-pstack Replacement)</h3>
+        <p>Install directly with Pi's package manager:</p>
+        <pre><code>pi install npm:potetos-for-everyone
+# or from git:
+pi install git:github.com/TheOnlyFusionCube/potetos-for-everyone</code></pre>
+        <p><strong>Features:</strong> Built-in <code>"pi-package"</code> manifest auto-exposes all 47 skills, 23 playbooks, and the <code>/poteto-mode</code> command.</p>
+      </div>
+
+      <div class="card">
+        <h3>🤖 OpenAI Codex</h3>
+        <p>Symlink the shared skills and Codex slash prompts:</p>
+        <pre><code>git clone https://github.com/TheOnlyFusionCube/potetos-for-everyone.git
+cd potetos-for-everyone
+mkdir -p ~/.agents/skills ~/.codex/prompts
+for s in skills/*/; do ln -s "$PWD/$s" ~/.agents/skills/"$(basename "$s")"; done
+for p in .codex-plugin/prompts/*.md; do ln -s "$PWD/$p" ~/.codex/prompts/"$(basename "$p")"; done</code></pre>
+        <p><strong>Features:</strong> Enables <code>/poteto-mode</code>, <code>/tdd</code>, <code>/arena</code>, and <code>/architect</code> in Codex.</p>
+      </div>
+
+      <div class="card">
+        <h3>⚡ Terminal CLI (Zero Setup)</h3>
+        <p>For Windsurf, Copilot, Cline, Roo Code, Gemini CLI, or generic workflows:</p>
+        <pre><code>npx potetos</code></pre>
+        <p><strong>Features:</strong> Auto-detects your workspace and provisions <code>CLAUDE.md</code>, <code>GEMINI.md</code>, <code>AGENTS.md</code>, and IDE rules with zero dependencies.</p>
+      </div>
+    </div>
+
+    <h2>Feature Comparison</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Capability</th>
+          <th>potetos-for-everyone (Universal)</th>
+          <th>pstack-claude (Claude only)</th>
+          <th>pi-pstack (Pi only)</th>
+          <th>Manual Custom Setup</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Upstream Version</strong></td>
+          <td><strong>v0.15.0+ (Latest)</strong></td>
+          <td>v0.14.8 (Frozen)</td>
+          <td>v0.1.0 (Outdated)</td>
+          <td>Manual / Stale</td>
+        </tr>
+        <tr>
+          <td><strong>Claude Code Native Plugin</strong></td>
+          <td>&check; Yes (<code>/plugin install</code>)</td>
+          <td>&check; Yes</td>
+          <td>&cross; No</td>
+          <td>&cross; Manual copy</td>
+        </tr>
+        <tr>
+          <td><strong>Pi Agent Package</strong></td>
+          <td>&check; Yes (<code>pi install</code>)</td>
+          <td>&cross; No</td>
+          <td>&check; Yes</td>
+          <td>&cross; Manual copy</td>
+        </tr>
+        <tr>
+          <td><strong>Codex Slash Prompts</strong></td>
+          <td>&check; Yes (24 prompts)</td>
+          <td>&check; Yes</td>
+          <td>&cross; No</td>
+          <td>&cross; No</td>
+        </tr>
+        <tr>
+          <td><strong>Zero-Setup Universal Runner</strong></td>
+          <td>&check; Yes (<code>npx potetos</code>)</td>
+          <td>&cross; No</td>
+          <td>&cross; No</td>
+          <td>&cross; No</td>
+        </tr>
+        <tr>
+          <td><strong>Multi-Model Panels</strong></td>
+          <td>&check; Genuine cross-vendor diversity</td>
+          <td>&cross; Single-vendor only</td>
+          <td>&cross; Single-vendor only</td>
+          <td>&cross; Manual config</td>
+        </tr>
+        <tr>
+          <td><strong>Canonical Skills Count</strong></td>
+          <td><strong>47 skills (all playbooks &amp; principles)</strong></td>
+          <td>31 public + 23 internal</td>
+          <td>44 skills</td>
+          <td>Variable</td>
+        </tr>
+        <tr>
+          <td><strong>Multi-Platform CI</strong></td>
+          <td>&check; macOS, Ubuntu, Windows tested</td>
+          <td>&cross; Linux only</td>
+          <td>&cross; No CI</td>
+          <td>&cross; None</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Frequently Asked Questions</h2>
+    <div class="faq-item">
+      <h4>How to use pstack without Cursor?</h4>
+      <p>Install <code>potetos-for-everyone</code> via Claude Code plugin (<code>/plugin install pstack@potetos-for-everyone</code>), Pi CLI (<code>pi install npm:potetos-for-everyone</code>), or the zero-setup runner (<code>npx potetos</code>). It exposes the full Poteto Mode engineering system across all terminal agents.</p>
+    </div>
+    <div class="faq-item">
+      <h4>What is the difference between potetos-for-everyone, pstack-claude, and pi-pstack?</h4>
+      <p><code>pstack-claude</code> and <code>pi-pstack</code> are fragmented single-platform ports pinned to older upstream releases. <code>potetos-for-everyone</code> is the unified, multi-platform superset tracking upstream v0.15.0+ that natively supports Claude Code, Pi, Codex, Cursor, Gemini, and terminal agents in a single zero-dependency package.</p>
+    </div>
+    <div class="faq-item">
+      <h4>What is Poteto Mode?</h4>
+      <p>Poteto Mode is an engineering operating system created by Lauren Tan. Instead of speculative code generation, it enforces structured playbooks, strict Red-Green TDD, blast-radius boundary tracing, and runtime verification.</p>
+    </div>
+
+    <footer>
+      <p>Original pstack and Poteto Mode by <strong>Lauren Tan (<a href="https://github.com/poteto">@poteto</a>)</strong>. MIT License.</p>
+      <p>Independent multi-platform distribution maintained by <a href="https://github.com/TheOnlyFusionCube">TheOnlyFusionCube</a>.</p>
+    </footer>
+  </div>
+</body>
+</html>
