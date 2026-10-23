@@ -76,5 +76,20 @@ class SessionStartTests(unittest.TestCase):
         self.assertEqual(restored.stdout, (ROOT / "hooks/session-start-context.md").read_text())
 
 
+    def test_on_demand_keeps_manual_plugin_entrypoints_available(self):
+        # Issue #1: opting out of SessionStart must never disable manual use.
+        marketplace = json.loads((ROOT / ".claude-plugin/marketplace.json").read_text())
+        aliases = {entry["name"] for entry in marketplace["plugins"]}
+        self.assertTrue({"pstack", "poteto-mode", "pstack-claude"} <= aliases)
+        self.assertTrue(all(entry["source"] == "./" for entry in marketplace["plugins"]))
+        plugin = json.loads((ROOT / ".claude-plugin/plugin.json").read_text())
+        self.assertEqual(plugin["name"], "pstack")
+        self.assertTrue((ROOT / "skills/poteto-mode/SKILL.md").is_file())
+        self.assertTrue((ROOT / "agents/poteto-agent.md").is_file())
+        disabled, = self.run_event("startup", "0")
+        self.assertEqual(disabled.returncode, 0, disabled.stderr)
+        self.assertEqual(disabled.stdout, "")
+
+
 if __name__ == "__main__":
     unittest.main()

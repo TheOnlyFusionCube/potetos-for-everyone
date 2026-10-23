@@ -28,6 +28,9 @@ jobs:
         with:
           node-version: "24"
 
+      - name: Protect Issue #1 - Claude Code SessionStart opt-out
+        run: python3 -m unittest -v tests.test_hooks
+
       - name: Run skill linter
         run: python3 scripts/lint_skills.py
 
