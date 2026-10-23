@@ -5,9 +5,9 @@ import os from "node:os";
 import path from "node:path";
 import { install, update, status, uninstall, doctor, listSkills } from "../npm/core.mjs";
 
-test("npm core: listSkills returns 47 skills", () => {
+test("npm core: listSkills returns 57 skills", () => {
   const skills = listSkills();
-  assert.equal(skills.length, 47);
+  assert.equal(skills.length, 57);
   assert.ok(skills.includes("poteto-mode"));
   assert.ok(skills.includes("arena"));
   assert.ok(skills.includes("unslop"));
@@ -18,7 +18,7 @@ test("npm core: install, status, update, uninstall lifecycle", () => {
   try {
     // 1. Install
     const installRes = install({ target: tmp, agent: "all" });
-    assert.equal(installRes.installed, 47);
+    assert.equal(installRes.installed, 57);
     assert.ok(fs.existsSync(path.join(tmp, ".agents", "skills", "poteto-mode", "SKILL.md")));
     assert.ok(fs.existsSync(path.join(tmp, ".potetos", "install.json")));
     assert.ok(fs.existsSync(path.join(tmp, "AGENTS.md")));
@@ -27,7 +27,7 @@ test("npm core: install, status, update, uninstall lifecycle", () => {
     const statusClean = status({ target: tmp });
     assert.equal(statusClean.installed, true);
     assert.equal(statusClean.clean, true);
-    assert.equal(statusClean.count, 47);
+    assert.equal(statusClean.count, 57);
 
     // 3. Status modified after editing
     const skillPath = path.join(tmp, ".agents", "skills", "poteto-mode", "SKILL.md");
@@ -40,12 +40,12 @@ test("npm core: install, status, update, uninstall lifecycle", () => {
 
     // Update with force should succeed
     const updateRes = update({ target: tmp, force: true });
-    assert.equal(updateRes.installed, 47);
+    assert.equal(updateRes.installed, 57);
     assert.notEqual(fs.readFileSync(skillPath, "utf8"), "modified");
 
     // 4. Doctor
     const doc = doctor({ target: tmp });
-    assert.equal(doc.canonicalSkills, 47);
+    assert.equal(doc.canonicalSkills, 57);
     assert.equal(doc.install.clean, true);
 
     // 5. Uninstall
