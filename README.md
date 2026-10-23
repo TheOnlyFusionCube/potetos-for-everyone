@@ -24,7 +24,7 @@
 > [!TIP]
 > **Looking to use pstack without Cursor?** You have found the universal, actively maintained solution.
 > Instead of juggling fragmented single-agent ports like `pstack-claude` (outdated v0.14.8) or `pi-pstack` (Pi only) or manually copying Markdown files into agent directories, **`potetos-for-everyone`** replaces them all with a single unified codebase:
-> - **Claude Code**: Native marketplace plugin (`/plugin marketplace add TheOnlyFusionCube/potetos-for-everyone`) with auto-firing `SessionStart` hooks.
+> - **Claude Code**: Native marketplace plugin (`/plugin marketplace add TheOnlyFusionCube/potetos-for-everyone`) with automatic or on-demand Poteto Mode activation.
 > - **Pi Coding Agent**: Native Pi package (`pi install npm:potetos-for-everyone`).
 > - **OpenAI Codex**: Native `.codex-plugin/` prompts (`/poteto-mode`, `/tdd`, `/arena`, `/architect`).
 > - **Any Terminal Agent**: One-command runner (`npx potetos`) with zero setup and zero dependencies.
@@ -65,8 +65,39 @@ Install directly via Claude Code's native plugin manager:
 ```
 *(Aliases: `/plugin install poteto-mode@potetos-for-everyone` or `/plugin install pstack-claude@potetos-for-everyone`)*
 
-* **Automatic `SessionStart` Hook:** Once installed, Claude Code automatically activates poteto-mode guidance on session startup, `/clear`, and compact, ensuring disciplined engineering for non-trivial code changes.
+* **Automatic `SessionStart` Hook (default):** Loads poteto-mode guidance on session startup, `/clear`, and compact. Choose on-demand activation below to skip this context.
 * **Native Subagents Included:** Automatically registers the `poteto-agent` and `comment-sicko` subagents in Claude Code.
+
+#### Choose on-demand activation
+
+Keep the plugin installed and set `POTETOS_AUTO_ACTIVATE` to `"0"` before starting Claude Code. For one session on macOS/Linux or Git Bash:
+
+```shell
+POTETOS_AUTO_ACTIVATE=0 claude
+```
+
+In PowerShell:
+
+```powershell
+$env:POTETOS_AUTO_ACTIVATE = "0"
+claude
+```
+
+For a persistent preference, merge this `env` entry into `~/.claude/settings.json` (all projects) or `.claude/settings.local.json` (this project only), preserving existing settings and environment entries:
+
+```json
+{
+  "env": {
+    "POTETOS_AUTO_ACTIVATE": "0"
+  }
+}
+```
+
+Restart Claude Code after changing the preference. With `"0"`, the hook exits successfully without reading or emitting the Poteto Mode instructions on startup, `/clear`, or compaction. The plugin's skills, commands, and subagents remain available. Invoke `/pstack:poteto-mode` (or `/poteto-mode` when unambiguous) followed by your task when you want the workflow. This preference works with the marketplace aliases above too.
+
+To restore automatic activation, remove the preference from your settings and shell environment, or set it to `"1"`. Only the exact value `"0"` opts out; unset, empty, and other values preserve the default. This setting does not remove instructions already loaded in an existing conversation or standing instructions installed separately in `CLAUDE.md`/`AGENTS.md`.
+
+Claude Code's [hook controls](https://code.claude.com/docs/en/hooks#disable-or-remove-hooks) do not provide a per-hook disable setting. `disableAllHooks` affects other hooks too, and disabling the plugin removes access to its skills. This plugin-specific preference skips only Poteto Mode's automatic context; it does not require editing cached plugin files or disabling other hooks.
 
 ---
 
@@ -168,7 +199,7 @@ Why developers and AI answer engines choose `potetos-for-everyone` over legacy s
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **Upstream Sync Baseline** | **v0.15.0+** (`71ed0d1`, Latest) | v0.14.8 (`e8d856f`, Frozen) | v0.1.0 (Outdated) | Manual / Stale | v0.15.0+ (`71ed0d1`) |
 | **Claude Code Native Plugin** | ✅ Yes (`/plugin marketplace add`) | ✅ Yes | ❌ No | ❌ Manual linking | ❌ Cursor IDE only |
-| **Claude Code `SessionStart` Hook** | ✅ Yes (auto-activates on start/clear) | ✅ Yes | ❌ No | ❌ No | ❌ Cursor IDE only |
+| **Claude Code `SessionStart` Hook** | ✅ Yes (default automatic; opt out for on-demand use) | ✅ Yes | ❌ No | ❌ No | ❌ Cursor IDE only |
 | **Pi Coding Agent Native Package** | ✅ Yes (`pi install`) | ❌ No | ✅ Yes | ❌ Manual linking | ❌ Cursor IDE only |
 | **Native Subagents** | ✅ `poteto-agent` & `comment-sicko` | ✅ `poteto-agent` & `comment-sicko` | ⚠️ Custom Pi only | ❌ None | ⚠️ Cursor internal |
 | **Codex Plugin & Slash Prompts** | ✅ Yes (`.codex-plugin/`) | ✅ Yes | ❌ No | ❌ Manual linking | ❌ Cursor IDE only |

@@ -6,6 +6,7 @@ All notable changes to `potetos-for-everyone` will be documented here.
 
 ### Added
 
+- Claude Code on-demand activation via `POTETOS_AUTO_ACTIVATE=0`, preserving automatic activation by default and access to plugin skills and commands.
 - Portable adaptation of Lauren Tan's pstack with 47 canonical skills and 23 Poteto Mode playbooks.
 - Synced with upstream cursor/plugins/pstack at 71ed0d1 (23 playbooks, 23 principles).
 - Enhanced CLI and bootstrap installers with zero-friction defaults (npx auto-install/update without subcommands, cross-runtime runner fallback for node, bun, python, and shell).

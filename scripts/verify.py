@@ -20,6 +20,7 @@ def main() -> int:
     # Keep the default verifier fast and reliable while still covering each
     # safety-critical boundary. CI also runs the full discovered test suite.
     critical_tests = [
+        "tests.test_hooks",
         "tests.test_install.InstallTests.test_default_install_is_self_contained_and_all_agent",
         "tests.test_install.InstallTests.test_install_and_uninstall_preserve_existing_content",
         "tests.test_install.InstallTests.test_update_refreshes_clean_install_and_refuses_local_edits",
