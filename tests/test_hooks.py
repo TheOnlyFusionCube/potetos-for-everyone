@@ -20,10 +20,30 @@ class SessionStartTests(unittest.TestCase):
         shutil.copytree(ROOT / "hooks", self.plugin / "hooks")
         self.config = json.loads((self.plugin / "hooks/hooks.json").read_text())
 
+    @staticmethod
+    def _hook_shell():
+        # On Windows, plain "bash" can resolve to the WSL launcher rather
+        # than Git Bash; run the actual Git Bash binary explicitly.
+        if os.name != "nt":
+            return "bash"
+        git = shutil.which("git")
+        if git is None:
+            raise RuntimeError("Git for Windows is required for the SessionStart test")
+        git_root = Path(git).resolve().parent.parent
+        for candidate in (git_root / "bin/bash.exe", git_root / "usr/bin/bash.exe"):
+            if candidate.is_file():
+                return str(candidate)
+        raise RuntimeError("Git Bash executable not found alongside Git")
+
     def run_event(self, event, value=None):
         env = os.environ.copy()
         env.pop("POTETOS_AUTO_ACTIVATE", None)
         env["CLAUDE_PLUGIN_ROOT"] = str(self.plugin)
+        if os.name == "nt":
+            # MSYS shells resolve /c/... and /d/... consistently.
+            env["CLAUDE_PLUGIN_ROOT"] = (
+                f"/{self.plugin.drive[0].lower()}{self.plugin.as_posix()[2:]}"
+            )
         if value is not None:
             env["POTETOS_AUTO_ACTIVATE"] = value
         results = []
@@ -31,7 +51,7 @@ class SessionStartTests(unittest.TestCase):
             if re.search(entry.get("matcher", ""), event):
                 for hook in entry["hooks"]:
                     results.append(subprocess.run(
-                        ["bash", "-c", hook["command"]],
+                        [self._hook_shell(), "-c", hook["command"]],
                         input=json.dumps({"hook_event_name": "SessionStart", "source": event}),
                         text=True, capture_output=True, env=env, cwd=self.temp.name,
                         timeout=10,
@@ -74,6 +94,21 @@ class SessionStartTests(unittest.TestCase):
         self.assertEqual(disabled.stdout, "")
         self.assertEqual(restored.returncode, 0, restored.stderr)
         self.assertEqual(restored.stdout, (ROOT / "hooks/session-start-context.md").read_text())
+
+
+    def test_on_demand_keeps_manual_plugin_entrypoints_available(self):
+        # Issue #1: opting out of SessionStart must never disable manual use.
+        marketplace = json.loads((ROOT / ".claude-plugin/marketplace.json").read_text())
+        aliases = {entry["name"] for entry in marketplace["plugins"]}
+        self.assertTrue({"pstack", "poteto-mode", "pstack-claude"} <= aliases)
+        self.assertTrue(all(entry["source"] == "./" for entry in marketplace["plugins"]))
+        plugin = json.loads((ROOT / ".claude-plugin/plugin.json").read_text())
+        self.assertEqual(plugin["name"], "pstack")
+        self.assertTrue((ROOT / "skills/poteto-mode/SKILL.md").is_file())
+        self.assertTrue((ROOT / "agents/poteto-agent.md").is_file())
+        disabled, = self.run_event("startup", "0")
+        self.assertEqual(disabled.returncode, 0, disabled.stderr)
+        self.assertEqual(disabled.stdout, "")
 
 
 if __name__ == "__main__":
