@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import json, re, sys
 ROOT=Path(__file__).resolve().parents[1]
 SKILLS=ROOT/'skills'
@@ -38,6 +38,13 @@ extra=found-required_playbooks
 if missing: errors.append('missing playbooks: '+', '.join(sorted(missing)))
 if extra: errors.append('unexpected playbooks not in tracked upstream inventory: '+', '.join(sorted(extra)))
 
+def unsafe_destination(raw):
+    # Reject traversal and absolute or drive-relative paths on both Unix and Windows.
+    if not isinstance(raw, str) or not raw or any(ch in raw for ch in ('\\', ':', '\x00')):
+        return True
+    return any(p.anchor or not p.parts or '..' in p.parts
+               for p in (PurePosixPath(raw), PureWindowsPath(raw)))
+
 registry=json.loads((ROOT/'adapters'/'registry.json').read_text(encoding='utf-8'))
 required_adapters={'generic','universal','cursor','claude','codex','gemini','copilot','windsurf','cline','roo','continue','kiro'}
 missing_adapters=required_adapters-set(registry)
@@ -47,8 +54,7 @@ for name,spec in registry.items():
     if spec.get('skill_dir') != expected_skill_dir:
         errors.append(f'adapter {name}: skill_dir must be {expected_skill_dir}')
     for field in ('skill_dir', 'instruction_file'):
-        destination = Path(spec.get(field, ''))
-        if destination.is_absolute() or '..' in destination.parts or not destination.parts:
+        if unsafe_destination(spec.get(field)):
             errors.append(f'adapter {name}: unsafe {field}')
 
 lic=(ROOT/'LICENSE').read_text(encoding='utf-8'); notice=(ROOT/'NOTICE.md').read_text(encoding='utf-8'); readme=(ROOT/'README.md').read_text(encoding='utf-8')
