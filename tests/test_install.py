@@ -70,6 +70,27 @@ class InstallTests(unittest.TestCase):
                 self.assertTrue(unrelated.exists())
                 self.assertFalse(native.exists())
 
+    def test_legacy_all_update_preserves_unmanaged_kiro_collision(self):
+        target = self.temp_dir
+        potetos.install(SimpleNamespace(target=str(target), agent="all", link=False, force=False, no_gitignore=False))
+        manifest_file = target / ".potetos/install.json"
+        manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+        for rel in list(manifest["installed"]):
+            if rel.startswith(".kiro/"):
+                shutil.rmtree(target / rel)
+        manifest["installed"] = [rel for rel in manifest["installed"] if not rel.startswith(".kiro/")]
+        manifest["checksums"] = {key: val for key, val in manifest["checksums"].items() if not key.startswith(".kiro/")}
+        manifest.pop("skill_dirs")
+        manifest.pop("skill_count")
+        manifest_file.write_text(json.dumps(manifest), encoding="utf-8")
+        native = target / ".kiro/skills/poteto-mode/SKILL.md"
+        native.parent.mkdir(parents=True, exist_ok=True)
+        native.write_text("user owned", encoding="utf-8")
+        with self.assertRaises(SystemExit):
+            potetos.update(SimpleNamespace(target=str(target), force=True, copy=False, link=False))
+        self.assertEqual(native.read_text(encoding="utf-8"), "user owned")
+        self.assertTrue((target / ".agents/skills/poteto-mode/SKILL.md").exists())
+
     def test_install_and_uninstall_preserve_existing_content(self):
         agents_md = self.temp_dir / "AGENTS.md"
         user_header = "# Existing User Project Guidelines\n\nKeep this content intact."
