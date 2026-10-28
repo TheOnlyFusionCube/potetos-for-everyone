@@ -57,3 +57,54 @@ test("npm core: install, status, update, uninstall lifecycle", () => {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
+
+test("npm core: Kiro standalone and default all expose native skills and clean up safely", () => {
+  for (const agent of ["kiro", "all"]) {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "potetos-kiro-npm-"));
+    try {
+      install({ target: tmp, agent });
+      const native = path.join(tmp, ".kiro", "skills", "poteto-mode", "SKILL.md");
+      assert.ok(fs.existsSync(native));
+      if (agent === "all") assert.ok(fs.existsSync(path.join(tmp, ".agents", "skills", "poteto-mode", "SKILL.md")));
+      const manifest = JSON.parse(fs.readFileSync(path.join(tmp, ".potetos", "install.json"), "utf8"));
+      assert.ok(manifest.installed.includes(".kiro/skills/poteto-mode"));
+      assert.equal(status({ target: tmp }).count, 57);
+      assert.equal(status({ target: tmp }).clean, true);
+      fs.appendFileSync(native, "\nuser modification\n");
+      assert.equal(status({ target: tmp }).clean, false);
+      assert.throws(() => update({ target: tmp }), /edited or removed/);
+      assert.throws(() => uninstall({ target: tmp }), /edited or removed/);
+      assert.ok(fs.existsSync(native));
+      update({ target: tmp, force: true });
+      assert.equal(status({ target: tmp }).clean, true);
+      const unrelated = path.join(tmp, ".kiro", "skills", "custom", "SKILL.md");
+      fs.mkdirSync(path.dirname(unrelated), { recursive: true });
+      fs.writeFileSync(unrelated, "user-owned");
+      uninstall({ target: tmp });
+      assert.equal(fs.readFileSync(unrelated, "utf8"), "user-owned");
+      assert.equal(fs.existsSync(native), false);
+    } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+  }
+});
+
+test("npm core: update preflights native skill collisions", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "potetos-kiro-collision-"));
+  try {
+    install({ target: tmp, agent: "all" });
+    const metaPath = path.join(tmp, ".potetos", "install.json");
+    const meta = JSON.parse(fs.readFileSync(metaPath, "utf8"));
+    // Simulate an earlier manifest, before Kiro was included in all.
+    for (const rel of meta.installed.filter(x => x.startsWith(".kiro/"))) fs.rmSync(path.join(tmp, rel), { recursive: true });
+    meta.installed = meta.installed.filter(x => !x.startsWith(".kiro/"));
+    delete meta.skill_dirs;
+    delete meta.skill_count;
+    for (const key of Object.keys(meta.checksums)) if (key.startsWith(".kiro/")) delete meta.checksums[key];
+    fs.writeFileSync(metaPath, JSON.stringify(meta));
+    const native = path.join(tmp, ".kiro", "skills", "poteto-mode", "SKILL.md");
+    fs.mkdirSync(path.dirname(native), { recursive: true });
+    fs.writeFileSync(native, "user-owned");
+    assert.throws(() => update({ target: tmp }), /already exist/);
+    assert.ok(fs.existsSync(path.join(tmp, ".agents", "skills", "poteto-mode", "SKILL.md")));
+    assert.equal(fs.readFileSync(native, "utf8"), "user-owned");
+  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+});
