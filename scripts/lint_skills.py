@@ -39,13 +39,17 @@ if missing: errors.append('missing playbooks: '+', '.join(sorted(missing)))
 if extra: errors.append('unexpected playbooks not in tracked upstream inventory: '+', '.join(sorted(extra)))
 
 registry=json.loads((ROOT/'adapters'/'registry.json').read_text(encoding='utf-8'))
-required_adapters={'generic','universal','cursor','claude','codex','gemini','copilot','windsurf','cline','roo','continue'}
+required_adapters={'generic','universal','cursor','claude','codex','gemini','copilot','windsurf','cline','roo','continue','kiro'}
 missing_adapters=required_adapters-set(registry)
 if missing_adapters: errors.append('missing adapters: '+', '.join(sorted(missing_adapters)))
 for name,spec in registry.items():
-    if spec.get('skill_dir') != '.agents/skills': errors.append(f'adapter {name}: skill_dir must be .agents/skills')
-    instruction=Path(spec.get('instruction_file',''))
-    if instruction.is_absolute() or '..' in instruction.parts: errors.append(f'adapter {name}: unsafe instruction_file')
+    expected_skill_dir = '.kiro/skills' if name == 'kiro' else '.agents/skills'
+    if spec.get('skill_dir') != expected_skill_dir:
+        errors.append(f'adapter {name}: skill_dir must be {expected_skill_dir}')
+    for field in ('skill_dir', 'instruction_file'):
+        destination = Path(spec.get(field, ''))
+        if destination.is_absolute() or '..' in destination.parts or not destination.parts:
+            errors.append(f'adapter {name}: unsafe {field}')
 
 lic=(ROOT/'LICENSE').read_text(encoding='utf-8'); notice=(ROOT/'NOTICE.md').read_text(encoding='utf-8'); readme=(ROOT/'README.md').read_text(encoding='utf-8')
 for label,text in [('LICENSE',lic),('NOTICE',notice),('README',readme)]:

@@ -42,5 +42,9 @@
   "continue": {
     "instruction_file": ".continue/rules/potetos-for-everyone.md",
     "skill_dir": ".agents/skills"
+  },
+  "kiro": {
+    "instruction_file": "AGENTS.md",
+    "skill_dir": ".kiro/skills"
   }
 }

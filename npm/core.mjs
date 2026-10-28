@@ -66,10 +66,54 @@ function selectedAgents(selection, reg) {
   return [selection];
 }
 
-function skillDestination(target, agents, reg) {
-  const dirs = new Set(agents.map((name) => reg[name].skill_dir));
-  if (dirs.size !== 1) die("adapter registry uses multiple skill directories; one canonical install is required");
-  return path.join(target, [...dirs][0]);
+function skillDestinations(target, agents, reg) {
+  return [...new Set(agents.map((name) => reg[name].skill_dir))].map((rel) => ({
+    rel,
+    full: path.join(target, rel)
+  }));
+}
+
+function skillPlan(target, agents, reg) {
+  const skillDirs = skillDestinations(target, agents, reg);
+  const srcRoot = path.join(PACKAGE_ROOT, "skills");
+  const sources = fs.readdirSync(srcRoot).sort().filter((name) => {
+    const src = path.join(srcRoot, name);
+    return fs.statSync(src).isDirectory() && fs.existsSync(path.join(src, "SKILL.md"));
+  });
+  const entries = skillDirs.flatMap(({ rel, full }) => sources.map((name) => ({
+    src: path.join(srcRoot, name),
+    dst: path.join(full, name),
+    rel: `${rel}/${name}`
+  })));
+  return { skillDirs, sources, entries };
+}
+
+function pathExists(file) {
+  try { fs.lstatSync(file); return true; }
+  catch (err) { if (err.code === "ENOENT") return false; throw err; }
+}
+
+function skillCollisions(entries, managed = new Set()) {
+  const identical = new Set();
+  const collisions = [];
+  for (const { src, dst, rel } of entries) {
+    if (managed.has(rel) || !pathExists(dst)) continue;
+    let same = false;
+    try {
+      same = fs.lstatSync(dst).isDirectory() && hashTree(dst) === hashTree(src);
+    } catch { // An unreadable or non-directory destination is a collision.
+    }
+    if (same) identical.add(rel);
+    else collisions.push(dst);
+  }
+  return { identical, collisions };
+}
+
+function rejectCollisions(collisions) {
+  if (!collisions.length) return;
+  const preview = collisions.slice(0, 5).join(", ");
+  const more = collisions.length > 5 ? ` (+${collisions.length - 5} more)` : "";
+  die(`skill destinations already exist with different content: ${preview}${more}; resolve them before updating or use --force with install`);
 }
 
 function instructionFiles(agents, reg) {
@@ -164,48 +208,24 @@ export function install({ target = process.cwd(), agent = "all", force = false, 
   if (!fs.existsSync(target)) die(`target does not exist: ${target}`);
   const reg = registry();
   const agents = selectedAgents(agent, reg);
-  const skillsDst = skillDestination(target, agents, reg);
-  fs.mkdirSync(skillsDst, { recursive: true });
-  const installed = [];
-  const srcRoot = path.join(PACKAGE_ROOT, "skills");
-  const sources = fs.readdirSync(srcRoot).sort().filter((name) => {
-    const src = path.join(srcRoot, name);
-    return fs.statSync(src).isDirectory() && fs.existsSync(path.join(src, "SKILL.md"));
-  });
-  const identicalExisting = new Set();
-  if (!force) {
-    const collisions = [];
-    for (const name of sources) {
-      const src = path.join(srcRoot, name);
-      const dst = path.join(skillsDst, name);
-      if (!fs.existsSync(dst)) continue;
-      let identical = false;
-      try {
-        identical = fs.statSync(dst).isDirectory() && hashTree(dst) === hashTree(src);
-      } catch {
-        identical = false;
-      }
-      if (identical) identicalExisting.add(name);
-      else collisions.push(name);
-    }
-    if (collisions.length) {
-      const preview = collisions.slice(0, 5).map((name) => path.join(skillsDst, name)).join(", ");
-      const more = collisions.length > 5 ? ` (+${collisions.length - 5} more)` : "";
-      die(`skill destinations already exist with different content: ${preview}${more}; use --force to replace them`);
-    }
-  }
-  for (const name of sources) {
-    const src = path.join(srcRoot, name);
-    const dst = path.join(skillsDst, name);
-    if (!identicalExisting.has(name)) {
-      if (fs.existsSync(dst)) removePath(dst);
-      copyDir(src, dst);
-    }
-    installed.push(path.relative(target, dst).split(path.sep).join("/"));
+  const { skillDirs, sources, entries } = skillPlan(target, agents, reg);
+  const { identical, collisions } = force ? { identical: new Set(), collisions: [] } : skillCollisions(entries);
+  rejectCollisions(collisions);
+
+  for (const { src, dst, rel } of entries) {
+    if (identical.has(rel)) continue;
+    fs.mkdirSync(path.dirname(dst), { recursive: true });
+    if (pathExists(dst)) removePath(dst);
+    copyDir(src, dst);
   }
   const instructions = instructionFiles(agents, reg);
-  for (const rel of instructions) mergeMarkedBlock(path.join(target, rel), BEGIN, END, BLOCK);
+  // Keep only a small routing hint in persistent instructions. Kiro discovers
+  // complete skill instructions on demand from its own native directory.
+  const instructionBlock = BLOCK.replaceAll(".agents/skills/", `${skillDirs[0].rel}/`);
+  for (const rel of instructions) mergeMarkedBlock(path.join(target, rel), BEGIN, END, instructionBlock);
   if (manageGitignore) mergeMarkedBlock(path.join(target, ".gitignore"), GITIGNORE_BEGIN, GITIGNORE_END, GITIGNORE_BLOCK);
+
+  const installed = entries.map(({ rel }) => rel);
   const meta = {
     source: PACKAGE_ROOT,
     package: "potetos-for-everyone",
@@ -214,17 +234,19 @@ export function install({ target = process.cwd(), agent = "all", force = false, 
     agent_selection: agent,
     agents,
     mode: "copy",
-    skill_dir: path.relative(target, skillsDst).split(path.sep).join("/"),
+    skill_dir: skillDirs[0].rel,
+    skill_dirs: skillDirs.map(({ rel }) => rel),
+    skill_count: sources.length,
     instruction_files: instructions,
     gitignore_managed: manageGitignore,
     installed,
     checksums: Object.fromEntries(installed.map((rel) => [rel, hashTree(path.join(target, rel))])),
-    tree_checksum: hashTree(skillsDst)
+    tree_checksum: hashTree(skillDirs[0].full)
   };
   const manifest = path.join(target, MANIFEST);
   fs.mkdirSync(path.dirname(manifest), { recursive: true });
   fs.writeFileSync(manifest, JSON.stringify(meta, null, 2) + "\n", "utf8");
-  return { target, installed: installed.length, agent, agents, skills: meta.skill_dir };
+  return { target, installed: sources.length, agent, agents, skills: meta.skill_dir };
 }
 
 export function update({ target = process.cwd(), force = false } = {}) {
@@ -236,6 +258,13 @@ export function update({ target = process.cwd(), force = false } = {}) {
     const more = modified.length > 5 ? ` (+${modified.length - 5} more)` : "";
     die(`managed skills were edited or removed: ${sample}${more}; rerun with --force to replace them`);
   }
+  // Preflight newly introduced discovery paths (e.g. Kiro on an older "all"
+  // install) before deleting any managed content. --force only covers paths
+  // that the existing manifest owns, never unrelated user skills.
+  const agents = selectedAgents(meta.agent_selection || "universal", registry());
+  const { entries } = skillPlan(target, agents, registry());
+  rejectCollisions(skillCollisions(entries, new Set(meta.installed || [])).collisions);
+
   for (const rel of meta.installed || []) removePath(path.join(target, rel));
   return install({
     target,
@@ -251,12 +280,17 @@ export function autoInstall({ target = process.cwd(), agent = "all" } = {}) {
   return { action: "updated", result: update({ target }) };
 }
 
-export function uninstall({ target = process.cwd() } = {}) {
+export function uninstall({ target = process.cwd(), force = false } = {}) {
   target = path.resolve(target);
   const [manifest, meta] = loadManifest(target);
+  const modified = modifiedManagedPaths(target, meta);
+  if (modified.length && !force) {
+    die(`managed skills were edited or removed: ${modified.slice(0, 5).join(", ")}; rerun uninstall with --force to discard these edits`);
+  }
   for (const rel of meta.installed || []) removePath(path.join(target, rel));
-  const skillDir = path.join(target, meta.skill_dir || ".agents/skills");
-  pruneEmptyParents(skillDir, target);
+  for (const rel of meta.skill_dirs || [meta.skill_dir || ".agents/skills"]) {
+    pruneEmptyParents(path.join(target, rel), target);
+  }
   for (const rel of meta.instruction_files || ["AGENTS.md"]) {
     const file = path.join(target, rel);
     removeMarkedBlock(file, BEGIN, END);
@@ -279,7 +313,7 @@ export function status({ target = process.cwd() } = {}) {
     target,
     clean: modified.length === 0,
     modified,
-    count: (meta.installed || []).length,
+    count: meta.skill_count ?? (meta.installed || []).length,
     agent: meta.agent_selection || "unknown",
     mode: meta.mode || "unknown",
     packageVersion: meta.package_version || null

@@ -112,7 +112,7 @@ try {
       printInstall(update({ target, force: !!args.force }), "updated");
       break;
     case "uninstall": {
-      const result = uninstall({ target });
+      const result = uninstall({ target, force: !!args.force });
       console.log(`uninstalled potetos-for-everyone from ${result.target}`);
       break;
     }

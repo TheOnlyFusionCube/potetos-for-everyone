@@ -138,11 +138,33 @@ def _selected_agents(name: str) -> list[str]:
     return [name]
 
 
-def _skill_destination(target: Path, agents: list[str]) -> Path:
-    skill_dirs = {REGISTRY[name]["skill_dir"] for name in agents}
-    if len(skill_dirs) != 1:
-        die("adapter registry uses multiple skill directories; one canonical install is required")
-    return target / next(iter(skill_dirs))
+def _skill_destinations(target: Path, agents: list[str]) -> list[Path]:
+    return [target / rel for rel in dict.fromkeys(REGISTRY[name]["skill_dir"] for name in agents)]
+
+
+def _skill_plan(target: Path, agents: list[str]) -> tuple[list[Path], list[Path], list[tuple[Path, Path]]]:
+    dirs = _skill_destinations(target, agents)
+    sources = [p for p in sorted((REPO / "skills").iterdir()) if p.is_dir() and (p / "SKILL.md").exists()]
+    return dirs, sources, [(src, dst / src.name) for dst in dirs for src in sources]
+
+
+def _collisions(entries: list[tuple[Path, Path]], managed: set[str], target: Path, mode: str) -> list[Path]:
+    collisions = []
+    for src, dst in entries:
+        if dst.relative_to(target).as_posix() in managed or not (dst.exists() or dst.is_symlink()):
+            continue
+        if mode == "link" and dst.is_symlink() and dst.resolve() == src.resolve():
+            continue
+        if mode == "copy" and dst.is_dir() and not dst.is_symlink() and _hash_path(dst) == _hash_path(src):
+            continue
+        collisions.append(dst)
+    return collisions
+
+
+def _reject_collisions(collisions: list[Path]):
+    if collisions:
+        sample = ", ".join(str(p) for p in collisions[:5])
+        die(f"skill destinations already exist with different content: {sample}; resolve collisions before updating")
 
 
 def _instruction_files(agents: list[str]) -> list[str]:
@@ -153,10 +175,9 @@ def _install_impl(*, target: Path, agent_selection: str, mode: str, force: bool,
     if not target.exists():
         die(f"target does not exist: {target}")
     agents = _selected_agents(agent_selection)
-    skills_dst = _skill_destination(target, agents)
-    skills_dst.mkdir(parents=True, exist_ok=True)
+    skill_dirs, sources, entries = _skill_plan(target, agents)
     if mode == "link":
-        probe = skills_dst / ".potetos-link-probe"
+        probe = target / ".potetos-link-probe"
         try:
             probe.symlink_to(REPO / "skills", target_is_directory=True)
             probe.unlink()
@@ -164,75 +185,61 @@ def _install_impl(*, target: Path, agent_selection: str, mode: str, force: bool,
             probe.unlink(missing_ok=True)
             print("potetos: symlinks unavailable; falling back to copies", file=sys.stderr)
             mode = "copy"
-    installed: list[str] = []
-    sources = [src for src in sorted((REPO / "skills").iterdir()) if src.is_dir() and (src / "SKILL.md").exists()]
-
-    identical_existing: set[Path] = set()
     if not force:
-        collisions = []
-        for src in sources:
-            dst = skills_dst / src.name
-            if not (dst.exists() or dst.is_symlink()):
-                continue
-            if dst.is_symlink() and dst.resolve() == src.resolve() and mode == "link":
-                identical_existing.add(dst)
+        _reject_collisions(_collisions(entries, set(), target, mode))
+    installed = []
+    for src, dst in entries:
+        rel = dst.relative_to(target).as_posix()
+        if dst.exists() or dst.is_symlink():
+            if mode == "link" and dst.is_symlink() and dst.resolve() == src.resolve():
+                installed.append(rel)
                 continue
             if mode == "copy" and dst.is_dir() and not dst.is_symlink() and _hash_path(dst) == _hash_path(src):
-                identical_existing.add(dst)
+                installed.append(rel)
                 continue
-            collisions.append(dst)
-        if collisions:
-            sample = ", ".join(str(p) for p in collisions[:5])
-            more = f" (+{len(collisions) - 5} more)" if len(collisions) > 5 else ""
-            die(f"skill destinations already exist with different content: {sample}{more}; use --force to replace them")
-
-    for src in sources:
-        dst = skills_dst / src.name
-        if dst in identical_existing:
-            installed.append(str(dst.relative_to(target)))
-            continue
-        if dst.exists() or dst.is_symlink():
-            if dst.is_symlink() or dst.is_file():
-                dst.unlink()
-            else:
+            if dst.is_dir() and not dst.is_symlink():
                 shutil.rmtree(dst)
+            else:
+                dst.unlink()
+        dst.parent.mkdir(parents=True, exist_ok=True)
         if mode == "link":
             dst.symlink_to(src, target_is_directory=True)
         else:
             shutil.copytree(src, dst)
-        installed.append(str(dst.relative_to(target)))
+        installed.append(rel)
 
     instruction_files = _instruction_files(agents)
-    for rel in instruction_files:
-        merge_block(target / rel)
-
+    global BLOCK
+    original_block = BLOCK
+    try:
+        BLOCK = BLOCK.replace(".agents/skills/", skill_dirs[0].relative_to(target).as_posix() + "/")
+        for rel in instruction_files:
+            merge_block(target / rel)
+    finally:
+        BLOCK = original_block
     if manage_gitignore:
         merge_gitignore(target / ".gitignore")
-
-    checksums = {rel: _hash_path(target / rel) for rel in installed} if mode == "copy" else {}
-    tree_checksum = _hash_path(skills_dst) if mode == "copy" else None  # legacy manifest compatibility
     meta = {
         "source": str(REPO),
         "agent_selection": agent_selection,
         "agents": agents,
         "mode": mode,
-        "skill_dir": str(skills_dst.relative_to(target)),
+        "skill_dir": skill_dirs[0].relative_to(target).as_posix(),
+        "skill_dirs": [p.relative_to(target).as_posix() for p in skill_dirs],
+        "skill_count": len(sources),
         "instruction_files": instruction_files,
         "gitignore_managed": manage_gitignore,
         "installed": installed,
-        "checksums": checksums,
-        "tree_checksum": tree_checksum,
+        "checksums": {rel: _hash_path(target / rel) for rel in installed} if mode == "copy" else {},
+        "tree_checksum": _hash_path(skill_dirs[0]) if mode == "copy" else None,
     }
     mp = target / MANIFEST
     mp.parent.mkdir(parents=True, exist_ok=True)
     mp.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
-
-    print(f"installed {len(installed)} skills in {target}")
+    print(f"installed {len(sources)} skills in {target}")
     print(f"compatibility: {agent_selection} ({', '.join(agents)})")
     print(f"mode: {mode}")
-    print("instructions: " + ", ".join(instruction_files))
-    print(f"skills: {skills_dst.relative_to(target)}")
-    print("ready: ask your agent to use poteto-mode")
+    print("skills: " + ", ".join(meta["skill_dirs"]))
 
 
 def install(args):
@@ -315,18 +322,19 @@ def update(args):
         more = f" (+{len(modified) - 5} more)" if len(modified) > 5 else ""
         die(f"managed skills were edited or removed: {sample}{more}; rerun with --force to replace them")
 
+    agent_selection = meta.get("agent_selection")
+    if not agent_selection:
+        old_agent = meta.get("agent", "universal")
+        agent_selection = old_agent if old_agent in REGISTRY else "universal"
+    update_mode = "copy" if args.copy else "link" if args.link else meta.get("mode", "copy")
+    _, _, entries = _skill_plan(target, _selected_agents(agent_selection))
+    _reject_collisions(_collisions(entries, set(meta.get("installed", [])), target, update_mode))
     for rel in meta.get("installed", []):
         path = target / rel
         if path.is_symlink() or path.is_file():
             path.unlink(missing_ok=True)
         elif path.exists():
             shutil.rmtree(path)
-
-    agent_selection = meta.get("agent_selection")
-    if not agent_selection:
-        old_agent = meta.get("agent", "universal")
-        agent_selection = old_agent if old_agent in REGISTRY else "universal"
-    update_mode = "copy" if args.copy else "link" if args.link else meta.get("mode", "copy")
     _install_impl(
         target=target,
         agent_selection=agent_selection,
@@ -340,14 +348,17 @@ def update(args):
 def uninstall(args):
     target = Path(args.target).resolve()
     mp, meta = _load_manifest(target)
+    modified = _modified_managed_paths(target, meta)
+    if modified and not getattr(args, "force", False):
+        die(f"managed skills were edited or removed: {modified[:5]}; use --force to discard edits")
     for rel in meta.get("installed", []):
         path = target / rel
         if path.is_symlink() or path.is_file():
             path.unlink(missing_ok=True)
         elif path.exists():
             shutil.rmtree(path)
-    skill_dir = target / meta.get("skill_dir", ".agents/skills")
-    _prune_empty_parents(skill_dir, target)
+    for rel in meta.get("skill_dirs", [meta.get("skill_dir", ".agents/skills")]):
+        _prune_empty_parents(target / rel, target)
     for rel in meta.get("instruction_files", ["AGENTS.md"]):
         instruction = target / rel
         remove_block(instruction)
@@ -374,7 +385,7 @@ def status(args):
         raise SystemExit(1)
     _, meta = _load_manifest(target)
     modified = _modified_managed_paths(target, meta)
-    installed = len(meta.get("installed", []))
+    installed = meta.get("skill_count", len(meta.get("installed", [])))
     print(f"installed: {installed} skills")
     print(f"compatibility: {meta.get('agent_selection', ','.join(meta.get('agents', [])) or 'unknown')}")
     print(f"mode: {meta.get('mode', 'unknown')}")
@@ -501,6 +512,7 @@ def main():
 
     p = sub.add_parser("uninstall", help="remove only files managed by potetos-for-everyone")
     p.add_argument("--target", default=".")
+    p.add_argument("--force", action="store_true", help="discard edits to managed skills")
     p.set_defaults(fn=uninstall)
 
     p = sub.add_parser("status", help="show whether an install is present and clean")
