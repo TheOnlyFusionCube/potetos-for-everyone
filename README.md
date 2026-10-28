@@ -266,7 +266,8 @@ There is **one canonical behavior tree** under [`skills/`](skills/). Agent adapt
 | **Windsurf** | `.windsurf/rules/potetos-for-everyone.md` | `.agents/skills` | Cascade Rules & Flow Memory |
 | **Cline** | `.clinerules/potetos-for-everyone.md` | `.agents/skills` | Autonomous Tasks & Custom Instructions |
 | **Roo Code** | `.roo/rules/potetos-for-everyone.md` | `.agents/skills` | Role-specific Prompt Rules |
-| **Kiro** | `AGENTS.md` (minimal routing hint) | `.kiro/skills` | Native Agent Skills discovery and on-demand activation (repository layout tested; runtime not yet tested) |\n| **Continue** | `.continue/rules/potetos-for-everyone.md` | `.agents/skills` | Context Providers & Instructions |
+| **Kiro** | `AGENTS.md` (minimal routing hint) | `.kiro/skills` | Native Agent Skills discovery and on-demand activation (repository layout tested; runtime not yet tested) |
+| **Continue** | `.continue/rules/potetos-for-everyone.md` | `.agents/skills` | Context Providers & Instructions |
 | **opencode & Prime Agent** | `~/.agents/skills/` | `.agents/skills` | Open Agent Skills Specification |
 
 See [PORTABILITY.md](PORTABILITY.md) for detailed capability fallbacks.

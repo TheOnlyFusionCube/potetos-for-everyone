@@ -34,6 +34,9 @@ jobs:
       - name: Run skill linter
         run: python3 scripts/lint_skills.py
 
+      - name: Run Python regression tests
+        run: python3 -m unittest discover -s tests -p "test_*.py" -v
+
       - name: Run verification suite
         run: python3 scripts/verify.py
 
