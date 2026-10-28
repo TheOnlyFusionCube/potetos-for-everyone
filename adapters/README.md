@@ -1,6 +1,6 @@
 # Host adapters
 
-The canonical skills always live in `.agents/skills/`. Adapters are intentionally tiny: they only add the instruction file a host is likely to discover and point it back to the same canonical Poteto Mode skill.
+Canonical skills are maintained only in the repository `skills/` tree. An installation normally exposes them in `.agents/skills/`; Kiro additionally discovers generated copies in `.kiro/skills/`. Adapters are intentionally tiny: they only add the instruction file a host is likely to discover and point it back to the same canonical Poteto Mode skill.
 
 The one-line installer defaults to **all** supported shims so users do not have to know which path their agent expects. Use `POTETOS_AGENT=<name>` (bootstrap) or `--agent <name>` (CLI) to install only one specialized shim when repository minimalism matters more than instant cross-host use.
 
