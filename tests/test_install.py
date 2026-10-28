@@ -47,6 +47,29 @@ class InstallTests(unittest.TestCase):
         content = agents_md.read_text(encoding="utf-8")
         self.assertIn("<!-- potetos-for-everyone:begin -->", content)
 
+    def test_kiro_native_install_update_uninstall(self):
+        for agent in ("kiro", "all"):
+            with self.subTest(agent=agent):
+                target = self.temp_dir / agent
+                target.mkdir()
+                potetos.install(SimpleNamespace(target=str(target), agent=agent, link=False, force=False, no_gitignore=False))
+                native = target / ".kiro" / "skills" / "poteto-mode" / "SKILL.md"
+                self.assertTrue(native.exists())
+                if agent == "all":
+                    self.assertTrue((target / ".agents/skills/poteto-mode/SKILL.md").exists())
+                native.write_text("modified", encoding="utf-8")
+                with self.assertRaises(SystemExit):
+                    potetos.update(SimpleNamespace(target=str(target), force=False, copy=False, link=False))
+                with self.assertRaises(SystemExit):
+                    potetos.uninstall(SimpleNamespace(target=str(target)))
+                potetos.update(SimpleNamespace(target=str(target), force=True, copy=False, link=False))
+                unrelated = target / ".kiro/skills/my-own/SKILL.md"
+                unrelated.parent.mkdir(parents=True)
+                unrelated.write_text("keep me", encoding="utf-8")
+                potetos.uninstall(SimpleNamespace(target=str(target)))
+                self.assertTrue(unrelated.exists())
+                self.assertFalse(native.exists())
+
     def test_install_and_uninstall_preserve_existing_content(self):
         agents_md = self.temp_dir / "AGENTS.md"
         user_header = "# Existing User Project Guidelines\n\nKeep this content intact."
