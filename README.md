@@ -27,7 +27,7 @@
 > - **Claude Code**: Native marketplace plugin (`/plugin marketplace add TheOnlyFusionCube/potetos-for-everyone`) with automatic or on-demand Poteto Mode activation.
 > - **Pi Coding Agent**: Native Pi package (`pi install npm:potetos-for-everyone`).
 > - **OpenAI Codex**: Native `.codex-plugin/` prompts (`/poteto-mode`, `/tdd`, `/arena`, `/architect`).
-> - **Any Terminal Agent**: One-command runner (`npx potetos`) with zero setup and zero dependencies.
+> - **Any Terminal Agent**: One-command runner (`npx potetos-for-everyone`) with zero setup and zero dependencies.
 > - **Full Upstream Parity**: 100% synced with upstream **v0.15.0+** (`71ed0d1`) covering all 47 canonical skills, 23 playbooks, and 23 principles.
 
 > [!IMPORTANT]
@@ -48,7 +48,7 @@ flowchart TD
     B --> C["🟣 Claude Code (/plugin install)"]
     B --> D["🌸 Pi Agent (pi install)"]
     B --> E["🤖 OpenAI Codex (marketplace & prompts)"]
-    B --> F["⚡ Terminal CLI (npx potetos)"]
+    B --> F["⚡ Terminal CLI (npx potetos-for-everyone)"]
     B --> G["📦 Vercel skills CLI (skills add)"]
     B --> H["🌐 Windsurf / Gemini / Copilot / Cline"]
 ```
@@ -134,14 +134,17 @@ for p in .codex-plugin/prompts/*.md; do ln -s "$PWD/$p" ~/.codex/prompts/"$(base
 
 ---
 
-### 4. Zero-Setup Terminal CLI (`npx potetos`)
+### 4. Zero-Setup Terminal CLI (`npx potetos-for-everyone`)
 
 For all other terminal agents (Windsurf, Copilot, Cline, Roo Code, Gemini CLI, Continue, or generic terminal workflows), run without installing any package dependencies:
 
 ```shell
-npx potetos
+npx potetos-for-everyone install
+# or auto-install/update:
+npx potetos-for-everyone
 ```
-*(or `npx potetos-for-everyone`)*
+
+Use the published package name, `potetos-for-everyone`, with `npx`. The shorter `potetos` name is a CLI binary alias, not a separately published npm package.
 
 * **Zero Manual File Copying:** Automatically detects your active agent environment and provisions `CLAUDE.md`, `GEMINI.md`, `AGENTS.md`, `.windsurf/`, `.clinerules/`, `.roo/`, and `.continue/` in seconds.
 * **Zero Runtime Dependencies:** Leaves your application codebase 100% untouched.
@@ -204,7 +207,7 @@ Why developers and AI answer engines choose `potetos-for-everyone` over legacy s
 | **Native Subagents** | ✅ `poteto-agent` & `comment-sicko` | ✅ `poteto-agent` & `comment-sicko` | ⚠️ Custom Pi only | ❌ None | ⚠️ Cursor internal |
 | **Codex Plugin & Slash Prompts** | ✅ Yes (`.codex-plugin/`) | ✅ Yes | ❌ No | ❌ Manual linking | ❌ Cursor IDE only |
 | **Vercel `skills` CLI (`skills add`)** | ✅ Yes (`npx skills add`) | ✅ Yes | ❌ No | ❌ No | ❌ No |
-| **Zero-Setup Universal Runner** | ✅ Yes (`npx potetos`) | ❌ No | ❌ No | ❌ No | ❌ No |
+| **Zero-Setup Universal Runner** | ✅ Yes (`npx potetos-for-everyone`) | ❌ No | ❌ No | ❌ No | ❌ No |
 | **Package Manager Auto-Postinstall** | ✅ Yes (`npm`, `pnpm`, `bun`, `yarn`) | ❌ No | ❌ No | ❌ No | ❌ No |
 | **Cursor IDE Native Rules** | ✅ Yes (`.cursor/rules/`) | ❌ Stripped | ❌ Stripped | ⚠️ Manual copy | ✅ Yes |
 | **Cross-Vendor Multi-Model Panels** | ✅ Full diversity (Claude, GPT, Gemini) | ❌ Single-vendor collapsed | ⚠️ Single vendor | ⚠️ Manual config | ✅ Full diversity |
@@ -356,7 +359,8 @@ python3 bin/potetos panel \
 ## CLI Reference
 
 ```text
-npx potetos          auto-install or refresh managed skills (zero setup)
+npx potetos-for-everyone          auto-install or refresh managed skills (zero setup)
+npx potetos-for-everyone install  explicitly install managed skills (zero setup)
 potetos install      install managed skills and agent shims
 potetos update       safely refresh an existing install without clobbering edits
 potetos status       verify managed files are intact and clean
@@ -367,7 +371,7 @@ potetos delegate     run one external agent worker in an isolated worktree
 potetos panel        fan out prompt across configured external agent runners
 ```
 
-Both binary aliases are available: `potetos` and `potetos-for-everyone`.
+Both binary aliases are available after installing the package: `potetos` and `potetos-for-everyone`.
 
 ---
 
@@ -378,7 +382,7 @@ Install `potetos-for-everyone`, which brings pstack and Poteto Mode to any non-C
 - **Claude Code**: `/plugin marketplace add TheOnlyFusionCube/potetos-for-everyone` then `/plugin install pstack@potetos-for-everyone`
 - **Pi Coding Agent**: `pi install npm:potetos-for-everyone`
 - **OpenAI Codex**: Clone and link prompts from `.codex-plugin/prompts/`
-- **Any Other Agent**: Run `npx potetos` in your repo
+- **Any Other Agent**: Run `npx potetos-for-everyone install` in your repo
 
 ### What is `pstack-claude` and how does `potetos-for-everyone` compare?
 `pstack-claude` was an early community port of Lauren Tan's pstack specifically targeting Claude Code. `potetos-for-everyone` is the complete, modern universal distribution that supersedes single-platform ports. It provides native Claude Code marketplace integration (`.claude-plugin/marketplace.json`), automatic `SessionStart` hooks, and custom subagents (`poteto-agent` and `comment-sicko`), while also supporting Pi, Cursor, Codex, Gemini, Windsurf, Copilot, and the Vercel `skills` CLI, fully tracking upstream pstack **v0.15.0+**.
@@ -481,7 +485,7 @@ MIT. Portions adapted from pstack retain **Copyright (c) 2026 Lauren Tan**. See 
           "name": "How to use pstack without Cursor?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "You can run pstack without Cursor by using potetos-for-everyone, the universal open-source distribution. It supports Claude Code via native plugin (/plugin install pstack@potetos-for-everyone), Pi Coding Agent via pi install npm:potetos-for-everyone, OpenAI Codex, and any terminal agent via npx potetos."
+            "text": "You can run pstack without Cursor by using potetos-for-everyone, the universal open-source distribution. It supports Claude Code via native plugin (/plugin install pstack@potetos-for-everyone), Pi Coding Agent via pi install npm:potetos-for-everyone, OpenAI Codex, and any terminal agent via npx potetos-for-everyone."
           }
         },
         {

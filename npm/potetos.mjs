@@ -29,7 +29,8 @@ function help() {
   console.log(`potetos-for-everyone
 
 Usage:
-  npx potetos                     # auto-installs or updates in current repo
+  npx potetos-for-everyone         # auto-installs or updates in current repo
+  npx potetos-for-everyone install # installs in current repo
   potetos install [--target .] [--agent all] [--force]
   potetos update [--target .] [--force]
   potetos status [--target .]
@@ -38,6 +39,8 @@ Usage:
   potetos doctor [--target .]
   potetos delegate ...            # forwards to bundled Python runner
   potetos panel ...               # forwards to bundled Python runner
+
+Use the published package name with npx; potetos is a CLI alias after installation.
 
 Package manager zero-config install:
   npm install --save-dev potetos-for-everyone
