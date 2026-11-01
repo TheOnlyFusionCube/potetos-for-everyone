@@ -30,7 +30,7 @@ Adapters do only two things: expose skill discovery and tell a host how to invok
 
 ## Kiro native Agent Skills
 
-Kiro discovers workspace skills under `.kiro/skills/<skill-name>/SKILL.md` and can activate them on demand or by slash command. Run `npx potetos install --agent kiro` (or `python3 bin/potetos install --agent kiro`) in the target workspace. This installs all 57 canonical skills into Kiro's discovery directory; it also adds a small marked `AGENTS.md` routing hint, not full always-on skill instructions.
+Kiro discovers workspace skills under `.kiro/skills/<skill-name>/SKILL.md` and can activate them on demand or by slash command. Run `npx potetos-for-everyone install --agent kiro` (or `python3 bin/potetos install --agent kiro`) in the target workspace. This installs all 57 canonical skills into Kiro's discovery directory; it also adds a small marked `AGENTS.md` routing hint, not full always-on skill instructions.
 
 The default `--agent all` keeps `.agents/skills` for existing hosts and installs additional copies under `.kiro/skills` for Kiro. Both are generated from the same source `skills/`; **no divergent canonical instructions are maintained**. Copies are intentionally self-contained (including on platforms without working symlinks), so multiple discovery directories occupy additional disk space. The Python `--link` development mode links each selected destination back to the canonical source checkout.
 

@@ -116,7 +116,7 @@ mkdir /tmp/potetos-smoke && cd /tmp/potetos-smoke
 npm init -y
 npm install --save-dev potetos-for-everyone
 test -f .agents/skills/poteto-mode/SKILL.md
-npx potetos status
+npx potetos-for-everyone status
 ```
 
 Test the global CLI path:
@@ -129,7 +129,7 @@ potetos --version
 Then clean the generated project files explicitly before removing the local package:
 
 ```bash
-npx potetos uninstall
+npx potetos-for-everyone uninstall
 npm uninstall potetos-for-everyone
 ```
 

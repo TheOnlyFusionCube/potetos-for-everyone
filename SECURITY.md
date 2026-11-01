@@ -22,4 +22,4 @@ Please include the affected version/commit, platform, minimal reproduction, and 
 
 The npm package has zero third-party runtime dependencies. Its `postinstall` hook performs only local filesystem setup inside the invoking project: it copies the bundled canonical skills, merges bounded instruction blocks, updates `.gitignore`, and writes `.potetos/install.json`. It does not contact external services. Set `POTETOS_SKIP_AUTO_INSTALL=1` or install with `--ignore-scripts` to disable automatic setup.
 
-Modern npm does not provide dependency uninstall lifecycle hooks, so project cleanup is explicit: run `npx potetos uninstall` before `npm uninstall potetos-for-everyone`.
+Modern npm does not provide dependency uninstall lifecycle hooks, so project cleanup is explicit: run `npx potetos-for-everyone uninstall` before `npm uninstall potetos-for-everyone`.

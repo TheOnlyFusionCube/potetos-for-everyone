@@ -60,7 +60,7 @@
             "name": "How to use pstack without Cursor?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "You can use pstack outside of Cursor by installing potetos-for-everyone, the universal open-source distribution. It supports Claude Code natively via plugin (/plugin install pstack@potetos-for-everyone), Pi Coding Agent via pi install npm:potetos-for-everyone, OpenAI Codex via prompt linking, and all terminal agents via npx potetos."
+              "text": "You can use pstack outside of Cursor by installing potetos-for-everyone, the universal open-source distribution. It supports Claude Code natively via plugin (/plugin install pstack@potetos-for-everyone), Pi Coding Agent via pi install npm:potetos-for-everyone, OpenAI Codex via prompt linking, and all terminal agents via npx potetos-for-everyone."
             }
           },
           {
@@ -324,7 +324,9 @@ for p in .codex-plugin/prompts/*.md; do ln -s "$PWD/$p" ~/.codex/prompts/"$(base
       <div class="card">
         <h3>⚡ Terminal CLI (Zero Setup)</h3>
         <p>For Windsurf, Copilot, Cline, Roo Code, Gemini CLI, or generic workflows:</p>
-        <pre><code>npx potetos</code></pre>
+        <pre><code>npx potetos-for-everyone install
+# or auto-install/update:
+npx potetos-for-everyone</code></pre>
         <p><strong>Features:</strong> Auto-detects your workspace and provisions <code>CLAUDE.md</code>, <code>GEMINI.md</code>, <code>AGENTS.md</code>, and IDE rules with zero dependencies.</p>
       </div>
     </div>
@@ -371,7 +373,7 @@ for p in .codex-plugin/prompts/*.md; do ln -s "$PWD/$p" ~/.codex/prompts/"$(base
         </tr>
         <tr>
           <td><strong>Zero-Setup Universal Runner</strong></td>
-          <td>&check; Yes (<code>npx potetos</code>)</td>
+          <td>&check; Yes (<code>npx potetos-for-everyone</code>)</td>
           <td>&cross; No</td>
           <td>&cross; No</td>
           <td>&cross; No</td>
@@ -403,7 +405,7 @@ for p in .codex-plugin/prompts/*.md; do ln -s "$PWD/$p" ~/.codex/prompts/"$(base
     <h2>Frequently Asked Questions</h2>
     <div class="faq-item">
       <h4>How to use pstack without Cursor?</h4>
-      <p>Install <code>potetos-for-everyone</code> via Claude Code plugin (<code>/plugin install pstack@potetos-for-everyone</code>), Pi CLI (<code>pi install npm:potetos-for-everyone</code>), or the zero-setup runner (<code>npx potetos</code>). It exposes the full Poteto Mode engineering system across all terminal agents.</p>
+      <p>Install <code>potetos-for-everyone</code> via Claude Code plugin (<code>/plugin install pstack@potetos-for-everyone</code>), Pi CLI (<code>pi install npm:potetos-for-everyone</code>), or the zero-setup runner (<code>npx potetos-for-everyone</code>). It exposes the full Poteto Mode engineering system across all terminal agents.</p>
     </div>
     <div class="faq-item">
       <h4>What is the difference between potetos-for-everyone, pstack-claude, and pi-pstack?</h4>

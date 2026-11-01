@@ -1,9 +1,36 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { install, update, status, uninstall, doctor, listSkills } from "../npm/core.mjs";
+
+test("npm CLI: npx instructions use the published package name", () => {
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+  const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+  assert.equal(pkg.bin[pkg.name], pkg.bin.potetos, "the published package must expose its own CLI name");
+
+  const help = spawnSync(process.execPath, [path.join(root, pkg.bin[pkg.name]), "--help"], {
+    cwd: root,
+    encoding: "utf8",
+  });
+  assert.ifError(help.error);
+  assert.equal(help.status, 0, help.stderr);
+
+  const readme = fs.readFileSync(path.join(root, "README.md"), "utf8");
+  for (const [source, content] of [["README.md", readme], ["CLI help", help.stdout]]) {
+    assert.ok(content.includes(`npx ${pkg.name}`), `${source} must advertise the published package`);
+    assert.ok(content.includes(`npx ${pkg.name} install`), `${source} must show an explicit install command`);
+  }
+
+  for (const source of ["README.md", "npm/potetos.mjs", "PORTABILITY.md", "PUBLISHING.md", "SECURITY.md", "docs/index.html"]) {
+    const content = fs.readFileSync(path.join(root, source), "utf8");
+    assert.doesNotMatch(content, /\bnpx\s+potetos\b(?!-for-everyone)/, `${source} must not advertise an unpublished npm package`);
+  }
+  assert.doesNotMatch(help.stdout, /\bnpx\s+potetos\b(?!-for-everyone)/);
+});
 
 test("npm core: listSkills returns 57 skills", () => {
   const skills = listSkills();
