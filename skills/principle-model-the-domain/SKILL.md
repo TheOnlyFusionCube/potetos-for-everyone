@@ -1,6 +1,6 @@
 ---
 name: principle-model-the-domain
-description: Encode the domain in the right structure: state machine, typed model, table, registry, reducer, boundary, or collection instead of scattered conditionals. Use when when stateful logic accumulates branches or repeated shape assumptions.
+description: "Encode the domain in the right structure: state machine, typed model, table, registry, reducer, boundary, or collection instead of scattered conditionals. Use when stateful logic accumulates branches or repeated shape assumptions."
 ---
 # Model the Domain
 
