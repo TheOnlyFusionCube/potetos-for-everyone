@@ -1,6 +1,6 @@
 ---
 name: principle-guard-the-context-window
-description: Route bulk exploration to isolated workers or files and bring back compact evidence summaries, not raw floods. Use when when reads, logs, fan-out, or generated output threatens to dominate context.
+description: Route bulk exploration to isolated workers or files and bring back compact evidence summaries, not raw floods. Use when reads, logs, fan-out, or generated output threatens to dominate context.
 ---
 # Guard the Context Window
 

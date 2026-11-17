@@ -1,6 +1,6 @@
 ---
 name: principle-test-behavior-not-implementation
-description: Call the system the way its consumer does and assert meaningful observable output; avoid mocks or assertions that only mirror internal calls. Use when when writing or evaluating tests.
+description: Call the system the way its consumer does and assert meaningful observable output; avoid mocks or assertions that only mirror internal calls. Use when writing or evaluating tests.
 ---
 # Test Behavior, Not Implementation
 
