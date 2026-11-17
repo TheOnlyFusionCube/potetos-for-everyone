@@ -1,6 +1,6 @@
 ---
 name: principle-never-block-on-the-human
-description: Run the experiment or make the reversible best-effort change, then show the result. Ask only for genuine preference, authority, or irreversible decisions. Use when when a reversible empirical or implementation choice can be resolved with available tools.
+description: Run the experiment or make the reversible best-effort change, then show the result. Ask only for genuine preference, authority, or irreversible decisions. Use when a reversible empirical or implementation choice can be resolved with available tools.
 ---
 # Never Block on the Human
 

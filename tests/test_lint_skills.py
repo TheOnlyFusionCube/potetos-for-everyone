@@ -59,6 +59,32 @@ class AdapterRegistryLintTests(unittest.TestCase):
                 if ".." in value:
                     self.assertIn(f"adapter {agent}: unsafe skill_dir", result.stderr)
 
+    def write_skill_frontmatter(self, frontmatter):
+        (self.root / "skills" / "poteto-mode" / "SKILL.md").write_text(
+            f"---\nname: poteto-mode\n{frontmatter}\n---\n", encoding="utf-8"
+        )
+
+    def test_unquoted_frontmatter_value_with_colon_is_rejected(self):
+        # YAML parsers such as Pi's reject a plain scalar containing ": ", so the host drops the skill.
+        for value in ("Encode the domain: state machine", "Ends with a colon:", "Has a # comment"):
+            with self.subTest(value=value):
+                self.write_skill_frontmatter(f"description: {value}")
+                result = self.lint()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("SKILL.md: description must be quoted", result.stderr)
+
+    def test_quoted_or_block_frontmatter_values_are_accepted(self):
+        for frontmatter in (
+            'description: "Encode the domain: state machine"',
+            "description: 'Encode the domain: state machine'",
+            "description: >-\n  Encode the domain: state machine",
+            "description: Plain value with no YAML indicators",
+        ):
+            with self.subTest(frontmatter=frontmatter):
+                self.write_skill_frontmatter(frontmatter)
+                result = self.lint()
+                self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_readme_kiro_and_continue_are_distinct_rows(self):
         lines = (ROOT / "README.md").read_text(encoding="utf-8").splitlines()
         kiro_index = next(i for i, line in enumerate(lines) if line.startswith("| **Kiro** |"))
