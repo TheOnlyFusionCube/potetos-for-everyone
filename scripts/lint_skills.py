@@ -23,6 +23,11 @@ for d in sorted(SKILLS.iterdir()):
     ds=re.search(r'^description:\s*(.+?)\s*$',fm,re.M)
     if not nm or nm.group(1)!=d.name: errors.append(f'{f}: name must equal directory')
     if not ds or not ds.group(1).strip(): errors.append(f'{f}: description required')
+    # Strict YAML parsers reject a plain scalar containing ': ' or ending in ':', and treat ' #' as a comment, so hosts drop or truncate the skill.
+    for key,value in re.findall(r'^([A-Za-z][\w-]*):[ \t]+(\S.*?)\s*$',fm,re.M):
+        if value[0] in '"\'>|[{': continue
+        if ': ' in value or value.endswith(':') or ' #' in value:
+            errors.append(f'{f}: {key} must be quoted; its plain value contains ": " or " #"')
     if not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*',d.name): errors.append(f'{d.name}: invalid Agent Skills name')
     for pat in banned:
         if re.search(pat,text): errors.append(f'{f}: vendor-specific primitive matches {pat}')
