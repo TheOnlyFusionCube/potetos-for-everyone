@@ -20,9 +20,14 @@ for d in sorted(SKILLS.iterdir()):
         errors.append(f'{f}: invalid/missing frontmatter'); continue
     fm=m.group(1)
     nm=re.search(r'^name:\s*(.+?)\s*$',fm,re.M)
-    ds=re.search(r'^description:\s*(.+?)\s*$',fm,re.M)
+    ds=re.search(r'^description:[ \t]*(?!#)(\S.*?)[ \t]*$',fm,re.M)
     if not nm or nm.group(1)!=d.name: errors.append(f'{f}: name must equal directory')
     if not ds or not ds.group(1).strip(): errors.append(f'{f}: description required')
+    # YAML treats a colon plus separation whitespace as a mapping and a separated hash as a comment.
+    for key,value in re.findall(r'^([A-Za-z][\w-]*):[ \t]+(\S.*?)[ \t]*$',fm,re.M):
+        if value[0] in ('"', "'", '>', '|', '[', '{'): continue
+        if re.search(r':[ \t]|[ \t]#', value) or value.endswith(':'):
+            errors.append(f'{f}: {key} must be quoted; its plain value contains a YAML indicator')
     if not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*',d.name): errors.append(f'{d.name}: invalid Agent Skills name')
     for pat in banned:
         if re.search(pat,text): errors.append(f'{f}: vendor-specific primitive matches {pat}')
