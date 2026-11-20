@@ -65,7 +65,6 @@ class AdapterRegistryLintTests(unittest.TestCase):
         )
 
     def test_unquoted_frontmatter_value_with_colon_is_rejected(self):
-        # YAML parsers such as Pi's reject a plain scalar containing ": ", so the host drops the skill.
         for value in ("Encode the domain: state machine", "Ends with a colon:", "Has a # comment"):
             with self.subTest(value=value):
                 self.write_skill_frontmatter(f"description: {value}")
@@ -73,11 +72,28 @@ class AdapterRegistryLintTests(unittest.TestCase):
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn("SKILL.md: description must be quoted", result.stderr)
 
+    def test_tab_separated_frontmatter_indicators_are_rejected(self):
+        for value in ("Encode:\tstate machine", "Has a tab\t# comment"):
+            with self.subTest(value=value):
+                self.write_skill_frontmatter(f"description: {value}")
+                result = self.lint()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("SKILL.md: description must be quoted", result.stderr)
+
+    def test_comment_only_description_is_rejected_as_missing(self):
+        for frontmatter in ("description: # comment", "description:\t# comment"):
+            with self.subTest(frontmatter=frontmatter):
+                self.write_skill_frontmatter(frontmatter)
+                result = self.lint()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("SKILL.md: description required", result.stderr)
+
     def test_quoted_or_block_frontmatter_values_are_accepted(self):
         for frontmatter in (
             'description: "Encode the domain: state machine"',
             "description: 'Encode the domain: state machine'",
             "description: >-\n  Encode the domain: state machine",
+            'description: "Has a # comment"',
             "description: Plain value with no YAML indicators",
         ):
             with self.subTest(frontmatter=frontmatter):
